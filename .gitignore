@@ -1,0 +1,9 @@
+node_modules/
+__pycache__/
+*.pyc
+outputs/
+*.sqlite3
+*.sqlite3-*
+.env*
+*access-key*
+.DS_Store

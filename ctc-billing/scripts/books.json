@@ -1,0 +1,15 @@
+{
+  "root": "/Users/joshua.c/Library/CloudStorage/OneDrive-Personal/Boardroom",
+  "company_folder": "Company Information",
+  "books_folder": "CTC Records",
+  "general": {
+    "filename": "CTC General record book.xlsx",
+    "title": "CTC General record book",
+    "columns": [["Job ID","job_id"],["Run ID","run_id"],["Company name","company_name"],["Company ID","company_id"],["Work date","created_date"],["Work done by agent","general_agent"],["Work description","general_work"],["Work status","work_status"],["Workflow stage","workflow_stage"],["Due date","due_date"],["Completed date","completed_date"],["Sub-category","subcategory"],["Company source","company_source"],["Scan reference","scan_reference"],["Updated at UTC","updated_at"]]
+  },
+  "cosec": {
+    "filename": "CTC cosec record book.xlsx",
+    "title": "CTC cosec record book",
+    "columns": [["Job ID","job_id"],["Run ID","run_id"],["Company name","company_name"],["Company ID","company_id"],["Work date","created_date"],["Work done by agent","cosec_agent"],["Work description","cosec_work"],["Billing status","billing_status"],["Billable quantity","quantity"],["Billing unit","billing_unit"],["Rate RM","rate_rm"],["Printing RM","printing_rm"],["Agreed charge RM","charge_rm"],["Invoice ID","invoice_id"],["Invoice date","invoice_date"],["Issued amount RM","billed_rm"],["Quantity evidence","quantity_evidence"],["Approval reference","approval_reference"],["Sub-category","subcategory"],["Updated at UTC","updated_at"]]
+  }
+}
