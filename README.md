@@ -14,7 +14,7 @@ Run `python3 dashboard/server.py` to start the dashboard on `http://127.0.0.1:87
 
 ## SSM form filling
 
-Download [ssm-form-filling.skill](ssm-form-filling.skill) for the reusable document-filling workflow. It uses each supplied form's fields and layout rather than a fixed SSM template, and supports PDF, scanned forms, Word documents, spreadsheets, and pasted form text.
+Download [ssm-form-filling.skill](ssm-form-filling.skill) for the reusable document-filling workflow, or use [the SSM skill folder](ssm-form-filling/) for GitHub skill import. Its entry point is [ssm-form-filling/SKILL.md](ssm-form-filling/SKILL.md). It uses each supplied form's fields and layout rather than a fixed SSM template, and supports PDF, scanned forms, Word documents, spreadsheets, and pasted form text.
 
 ### Usage
 
