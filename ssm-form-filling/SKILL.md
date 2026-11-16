@@ -5,6 +5,8 @@ description: Fill SSM and other company forms with a single intake and automatic
 
 # Company form filling
 
+For general dashboard actions—including creating or assigning tasks, reviews, record updates and handovers—use [references/dashboard-actions.md](references/dashboard-actions.md) and the bundled `scripts/dashboard_action.py`. This uses the existing restricted SQL connection plus the live dashboard API, so it does not need a browser or new OAuth setup. Read the server action menu instead of assuming an operation is missing. Keep scheduled briefings read-only; act on later explicit requests separately.
+
 Run this workflow when a worker supplies a new form to complete. The supplied form determines the fields and layout; company records supply the facts. This is a reusable process, not a fixed template for a single SSM form. Creating this skill does not itself start a company-specific filling run.
 
 ## Locations

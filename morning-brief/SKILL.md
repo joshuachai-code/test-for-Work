@@ -5,7 +5,9 @@ description: Set up or run a daily G-Work morning briefing from the live Cosec D
 
 # Morning brief
 
-Use the live database behind https://cosec-desk.vercel.app as the source of truth. Keep the briefing itself read-only. Do not start, create, submit, reassign or approve dashboard tasks, change deadlines, or run CTC/SSM work during a briefing. A later direct user request to verify or return a task is a separate action: follow [references/task-review.md](references/task-review.md) instead of refusing because the chat started with a briefing.
+For general dashboard actions—including creating or assigning tasks, reviews, record updates and handovers—use [references/dashboard-actions.md](references/dashboard-actions.md) and the bundled `scripts/dashboard_action.py`. This uses the existing restricted SQL connection plus the live dashboard API, so it does not need a browser or new OAuth setup. Read the server action menu instead of assuming an operation is missing. Keep scheduled briefings read-only; act on later explicit requests separately.
+
+Use the live database behind https://cosec-desk.vercel.app as the source of truth. Keep the briefing itself read-only. Do not start, create, submit, reassign or approve dashboard tasks, change deadlines, or run CTC/SSM work during a briefing. A later direct user request to create, assign, start, submit, verify, return or otherwise update work is a separate action: follow [references/dashboard-actions.md](references/dashboard-actions.md) instead of refusing because this chat began with a briefing.
 
 ## Find the employee's SQL tool and project
 

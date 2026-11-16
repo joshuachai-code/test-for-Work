@@ -1,3 +1,7 @@
+# All dashboard actions in G-Work
+
+Import [cosec-desk-actions](../cosec-desk-actions/) for the full dashboard action menu. The current morning-brief, CTC and SSM packages also bundle the same client and instructions. Refresh an already installed package once; a GitHub update does not update its cached G-Work copy. Continue using the employee’s existing restricted Hi/Hi2 connection; no new OAuth sign-in is required. The live action menu is https://cosec-desk.vercel.app/api/gwork and uses the dashboard’s actual handlers and current permissions.
+
 # Morning task list in G-Work
 
 Import the [morning-brief skill folder](../morning-brief/) from GitHub, or upload [morning-brief.skill](../morning-brief.skill). Both include the required `SKILL.md` and the scheduling resources. The standalone [morning-brief.md](../morning-brief.md) is a readable reference, not the import package.

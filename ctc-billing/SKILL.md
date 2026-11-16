@@ -5,6 +5,8 @@ description: Run Boardroom CTC billing by identifying the company, retrieving it
 
 # CTC Billing Workflow
 
+For general dashboard actions—including creating or assigning tasks, reviews, record updates and handovers—use [references/dashboard-actions.md](references/dashboard-actions.md) and the bundled `scripts/dashboard_action.py`. This uses the existing restricted SQL connection plus the live dashboard API, so it does not need a browser or new OAuth setup. Read the server action menu instead of assuming an operation is missing. Keep scheduled briefings read-only; act on later explicit requests separately.
+
 Follow the seven-step sequence in the supplied `CTC Workflow.docx`, with the user-confirmed overrides below taking precedence. This skill captures that procedure and the fields visible in its example forms; it does not depend on the original attachment remaining accessible.
 
 ## User-confirmed billing defaults

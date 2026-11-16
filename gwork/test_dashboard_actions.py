@@ -1,0 +1,38 @@
+import importlib.util
+import json
+from pathlib import Path
+import tempfile
+import unittest
+import uuid
+
+ROOT=Path(__file__).resolve().parents[1]
+spec=importlib.util.spec_from_file_location('actions',ROOT/'cosec-desk-actions/scripts/dashboard_action.py')
+actions=importlib.util.module_from_spec(spec);spec.loader.exec_module(actions)
+
+class DashboardActionsTests(unittest.TestCase):
+    def test_sql_contains_encoded_data_and_preserves_request_identity(self):
+        request={'request_id':str(uuid.uuid4()),'operation':'create_task',
+                 'arguments':{'company':'FASB','title':"x'); DROP TABLE app_users; -- 😀",'revision':3}}
+        first=actions.prepare(request)
+        self.assertEqual(first,actions.prepare(request))
+        self.assertNotIn('DROP TABLE',first['sql'])
+        self.assertIn(request['request_id'],first['sql'])
+        self.assertNotIn('role_name',first)
+        self.assertEqual(first['project_id'],'lingering-base-89796182')
+
+    def test_ticket_wrappers_and_fixed_destination(self):
+        ticket={'request_id':str(uuid.uuid4()),'ticket':'a'*64,'endpoint':actions.ENDPOINT}
+        for wrapper in [ticket,[{'request':ticket}],{'content':[{'type':'text','text':json.dumps([{'request':ticket}])}]}]:
+            self.assertEqual(actions.extract_ticket(wrapper),{k:ticket[k] for k in ['request_id','ticket']})
+        for value in [{**ticket,'endpoint':'https://example.invalid'},[ticket,ticket],{}, {**ticket,'ticket':'short'}]:
+            with self.assertRaises(ValueError):actions.extract_ticket(value)
+
+    def test_private_receipts_and_bundled_copies(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'receipt.json';actions.private_write(path,{'ok':True})
+            self.assertEqual(path.stat().st_mode&0o777,0o600)
+        for folder in ['morning-brief','ctc-billing','ssm-form-filling']:
+            for resource in ['scripts/dashboard_action.py','references/dashboard-actions.md']:
+                self.assertEqual((ROOT/folder/resource).read_bytes(),(ROOT/'cosec-desk-actions'/resource).read_bytes())
+
+if __name__=='__main__':unittest.main()

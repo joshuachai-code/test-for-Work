@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cosec Desk actions"
+  short_description: "Use dashboard actions through your linked staff permissions"
+  default_prompt: "Use my linked staff account to read or update Cosec Desk and verify the saved result."
