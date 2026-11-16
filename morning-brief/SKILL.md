@@ -7,9 +7,27 @@ description: Set up or run a daily G-Work morning briefing from the live Cosec D
 
 Use the live database behind https://cosec-desk.vercel.app as the source of truth. Keep the briefing read-only. Do not start, create, submit, reassign or approve dashboard tasks, change deadlines, or run CTC/SSM work during a briefing.
 
+## Find the employee's SQL tool and project
+
+Discover tools by capability: search for `run_sql` (or `Neon SQL`) and inspect the server instructions. The connection may have a custom name such as **Hi2** or **Hi**. An empty MCP resources list does not mean SQL tools are unavailable. If the tool is disabled, enable this employee's restricted connection in G-Work's **Skills & Tools** picker and in the scheduled task's tool settings.
+
+For this Cosec Desk deployment, pass this verified context on **every SQL call**, including identity checks and scheduled runs:
+
+```json
+{
+  "project_id": "lingering-base-89796182",
+  "branch_id": "br-super-thunder-az57jivk",
+  "database_name": "neondb"
+}
+```
+
+These are shared database routing identifiers, not credentials or an employee identity. Add the `sql` argument for the query. Preserve the connection's pinned restricted role: omit optional `role_name`; if the client requires a value, copy the exact pinned role stated in that server's instructions. Never infer it from a name or change it to access more data. Never send empty strings, JSON null or the string `"null"` for unused optional arguments; omit them, including `compute_id`.
+
+Call SQL directly with this context; do not run `list_projects` or organization discovery first. **A G-Work organization ID is not a Neon organization ID.** An organization lookup error caused by the wrong ID does not establish that this configured project is inaccessible. If the direct SQL call fails with this exact context, report that specific failure and stop; do not switch to an owner connection or invent identifiers. A different deployment needs independently verified replacement context before use.
+
 ## Verify the employee
 
-Use the employee's existing restricted Neon connection and its configured project/branch. Run `SELECT * FROM public.cosec_gwork_identity();` and verify exactly one active linked identity, Tasks enabled and the expected staff member. A G-Work login alone does not establish database identity. Stop if the connection is missing, unlinked or mismatched. Never choose an owner role, another employee connection or a guessed project/branch. Never request or store database passwords in this package.
+Use the employee's existing restricted Neon connection with the exact project context above. Run `SELECT current_user AS database_login, i.* FROM public.cosec_gwork_identity() AS i;` and verify exactly one active linked identity, Tasks enabled and the expected staff member. A G-Work login alone does not establish database identity. Stop if the connection is missing, unlinked or mismatched. Never choose an owner role, another employee connection or a guessed project/branch. Never request or store database passwords in this package.
 
 For a scheduled run, require the verified employee ID to match the ID bound into that reminder. Recheck permissions on every run. For a one-off briefing, verify the current linked employee before reading tasks.
 
@@ -31,9 +49,9 @@ Only create or change a schedule when requested. Default to **daily at 09:00 Asi
    ```
 
    Replace the placeholders with actual values. Use structured process arguments or proper shell quoting for names; never execute untrusted text as shell syntax. Add `--time 09:30` if requested. `--dry-run` only prepares configuration and does not activate a reminder.
-3. The installer reads [references/morning-briefing-prompt.md](references/morning-briefing-prompt.md), binds the verified employee, checks the device's UTC+8 timezone and uses G-Work's local scheduling API. It updates an existing reminder instead of duplicating it, enables no external notification channel, and reads back the saved configuration.
+3. The installer reads [references/morning-briefing-prompt.md](references/morning-briefing-prompt.md), embeds the project context above and binds the verified employee, checks the device's UTC+8 timezone and uses G-Work's local scheduling API. It updates an existing reminder instead of duplicating it, enables no external notification channel, and reads back the saved configuration.
 4. If the script cannot run because this is not a G-Work cowork session or its local scheduling API is unavailable, report that no schedule was created. If G-Work's native Scheduled Tasks capability is available instead, create/update the same employee-specific reminder with the fully bound prompt: daily at the selected time, Asia/Kuala_Lumpur device timezone, fresh session per run, no expiry and no external notification channel. Check existing reminders first, and verify the saved configuration before claiming success.
-5. Run the reminder once in G-Work and compare the returned task IDs/deadlines with the dashboard. Handle any tool-permission prompt for the specific read tool through the platform's normal controls. Keep the G-Work app running on the device at the scheduled time. Distinguish a verified saved schedule from a successfully tested run.
+5. Ensure the employee's restricted SQL tool is enabled for the scheduled run; a tool available only in the setup chat is not evidence of scheduled access. Run the reminder once in G-Work and compare the returned task IDs/deadlines with the dashboard. Handle any tool-permission prompt for the specific read tool through the platform's normal controls. Keep the G-Work app running on the device at the scheduled time. Distinguish a verified saved schedule from a successfully tested run.
 
 ## Keep the same task identity
 
