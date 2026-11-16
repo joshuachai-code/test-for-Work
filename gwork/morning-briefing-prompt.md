@@ -12,11 +12,12 @@ For this Cosec Desk deployment, pass this verified context on **every SQL call**
 {
   "project_id": "lingering-base-89796182",
   "branch_id": "br-super-thunder-az57jivk",
-  "database_name": "neondb"
+  "database_name": "neondb",
+  "compute_id": "ep-fragrant-dust-az3a8wul"
 }
 ```
 
-These are shared database routing identifiers, not credentials or an employee identity. Add the `sql` argument for the query. Preserve the connection's pinned restricted role: omit optional `role_name`; if the client requires a value, copy the exact pinned role stated in that server's instructions. Never infer it from a name or change it to access more data. Never send empty strings, JSON null or the string `"null"` for unused optional arguments; omit them, including `compute_id`.
+These are shared database routing identifiers, not credentials or an employee identity. Add the `sql` argument for the query. Preserve the connection's pinned restricted role: omit optional `role_name`; if the client requires a value, copy the exact pinned role stated in that server's instructions. Never infer it from a name or change it to access more data. Include the verified `compute_id` above on every call. Never send an empty string, `?`, JSON null, the string `"null"`, or the branch ID as the compute ID. Neon maps `compute_id` to `endpoint_id`; a validation error here can be caused by malformed tool arguments before authentication. If a previous call used one of those invalid values, correct it to `ep-fragrant-dust-az3a8wul` and retry the identity check once; do not guess another endpoint or ask for reauthorization solely because malformed arguments were rejected. Omit other unused optional arguments instead of sending placeholders.
 
 Call SQL directly with this context; do not run `list_projects` or organization discovery first. **A G-Work organization ID is not a Neon organization ID.** An organization lookup error caused by the wrong ID does not establish that this configured project is inaccessible. If the direct SQL call fails with this exact context, report that specific failure and stop; do not switch to an owner connection or invent identifiers. A different deployment needs independently verified replacement context before use.
 

@@ -11,7 +11,8 @@ import uuid
 
 ENDPOINT = 'https://cosec-desk.vercel.app/api/gwork'
 CONTEXT = {'project_id': 'lingering-base-89796182',
-           'branch_id': 'br-super-thunder-az57jivk', 'database_name': 'neondb'}
+           'branch_id': 'br-super-thunder-az57jivk', 'database_name': 'neondb',
+           'compute_id': 'ep-fragrant-dust-az3a8wul'}
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, *args, **kwargs):

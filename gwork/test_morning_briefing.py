@@ -53,6 +53,7 @@ class MorningBriefingTests(unittest.TestCase):
         self.assertNotIn('__STAFF_', payload['prompt'])
         self.assertIn('employee_id` equal to member-demo', payload['prompt'])
         self.assertIn('This is a read-only briefing.', payload['prompt'])
+        self.assertIn('"compute_id": "ep-fragrant-dust-az3a8wul"', payload['prompt'])
         self.assertEqual(payload['schedule']['expression'], '0 9 * * *')
         self.assertEqual(installer.make_payload('member-demo', 'Aisha', '09:30')['schedule']['expression'], '30 9 * * *')
         self.assertEqual(payload['notifyPlatforms'], [])

@@ -5,10 +5,12 @@
 Find the employee's existing Neon `run_sql` tool (it may be named Hi2 or Hi). Use this context on every SQL call:
 
 ```json
-{"project_id":"lingering-base-89796182","branch_id":"br-super-thunder-az57jivk","database_name":"neondb"}
+{"project_id":"lingering-base-89796182","branch_id":"br-super-thunder-az57jivk","database_name":"neondb","compute_id":"ep-fragrant-dust-az3a8wul"}
 ```
 
-Add `sql`. Omit unused optional parameters, including `compute_id` and `role_name`. Preserve the server's pinned role. Do not run organization/project discovery first or use a G-Work organization ID as a Neon organization ID.
+Add `sql`. Include the verified `compute_id` on every call, including identity checks. It is a database routing identifier, not a credential or staff identity. Never send an empty string, `?`, `null`, or the branch ID as the compute ID. Neon maps this field to `endpoint_id`; an endpoint-ID validation error can mean malformed tool arguments, not a broken login. If a previous call used an invalid value, correct it to this verified value and retry the identity check once. If that exact context still fails, stop and report the error without inventing another endpoint.
+
+Preserve the server's pinned role. Omit optional `role_name`; if G-Work requires it, copy the exact pinned role from that server's instructions (Daniel's Hi2: `gwork_daniel`). Never fill it with an empty string or change roles. Other employees must retain their own pinned role. Do not run organization/project discovery first or use a G-Work organization ID as a Neon organization ID.
 
 Run `SELECT current_user AS database_login, i.* FROM public.cosec_gwork_identity() AS i;`. Require exactly one linked active employee matching the expected person. For task actions, Tasks must be enabled. Daniel's Hi2 should identify `gwork_daniel` / `leader-demo`; this is not the identity for other employees. Stop on a mismatch.
 

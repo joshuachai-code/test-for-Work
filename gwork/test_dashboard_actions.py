@@ -19,6 +19,9 @@ class DashboardActionsTests(unittest.TestCase):
         self.assertIn(request['request_id'],first['sql'])
         self.assertNotIn('role_name',first)
         self.assertEqual(first['project_id'],'lingering-base-89796182')
+        # Hi2 forwards this value as Neon endpoint_id; blank values fail before SQL.
+        self.assertEqual(first['compute_id'],'ep-fragrant-dust-az3a8wul')
+        self.assertRegex(first['compute_id'],r'^ep-[a-z0-9-]+$')
 
     def test_ticket_wrappers_and_fixed_destination(self):
         ticket={'request_id':str(uuid.uuid4()),'ticket':'a'*64,'endpoint':actions.ENDPOINT}
