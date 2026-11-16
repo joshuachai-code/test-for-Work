@@ -2,7 +2,7 @@
 
 ## Daily tasks in G-Work
 
-Start with [morning-brief.md](morning-brief.md) at the repository root. It contains the complete setup instructions and daily briefing prompt for G-Work.
+For G-Work GitHub import, use the [morning-brief skill folder](morning-brief/) with its [SKILL.md](morning-brief/SKILL.md). For file upload, download [morning-brief.skill](morning-brief.skill). The package contains `SKILL.md` at its archive root, the scheduling script and the prompt; it does not require the rest of this repository. [morning-brief.md](morning-brief.md) remains a readable reference, not the import package.
 
 The [morning briefing setup](gwork/README.md) checks each linked employee's live dashboard tasks and deadlines at **9:00 a.m. Malaysia time** (9:30 optional). It lists overdue, due today, upcoming and review work with the exact dashboard `task_id`. Activate it inside that employee's G-Work session; downloading this repository does not enable a schedule.
 

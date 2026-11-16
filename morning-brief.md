@@ -5,6 +5,8 @@ description: Set up a daily G-Work morning briefing from the live Cosec Desk dat
 
 # Morning brief
 
+**For G-Work import:** use the [morning-brief folder containing SKILL.md](morning-brief/) or upload [morning-brief.skill](morning-brief.skill). This standalone Markdown file is the readable reference; the import package includes its own installer and prompt.
+
 Run daily at **9:00 a.m. Asia/Kuala_Lumpur**. Use **9:30 a.m.** if requested. Show what is overdue, due today, upcoming or waiting for review, then suggest up to three tasks to start. Read live database records on every run.
 
 ## Set up in G-Work

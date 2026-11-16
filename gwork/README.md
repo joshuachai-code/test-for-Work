@@ -1,6 +1,6 @@
 # Morning task list in G-Work
 
-The repository-root entry point is [morning-brief.md](../morning-brief.md), including setup and the full daily prompt.
+Import the [morning-brief skill folder](../morning-brief/) from GitHub, or upload [morning-brief.skill](../morning-brief.skill). Both include the required `SKILL.md` and the scheduling resources. The standalone [morning-brief.md](../morning-brief.md) is a readable reference, not the import package.
 
 Each employee gets a **daily 9:00 a.m. Malaysia-time** briefing of live tasks, grouped by overdue, due today, upcoming, no deadline and awaiting review. It includes the existing dashboard task IDs and suggests what to start. The reminder itself does not change tasks. Use `--time 09:30` if that is the preferred start time.
 
