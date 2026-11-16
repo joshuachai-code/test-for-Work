@@ -2,6 +2,8 @@
 
 ## Daily tasks in G-Work
 
+Start with [morning-brief.md](morning-brief.md) at the repository root. It contains the complete setup instructions and daily briefing prompt for G-Work.
+
 The [morning briefing setup](gwork/README.md) checks each linked employee's live dashboard tasks and deadlines at **9:00 a.m. Malaysia time** (9:30 optional). It lists overdue, due today, upcoming and review work with the exact dashboard `task_id`. Activate it inside that employee's G-Work session; downloading this repository does not enable a schedule.
 
 When the employee chooses an existing task, both skills start and submit **that same task ID**, preserving its deadline and assignee. CTC maps to the dashboard's existing **Certified true copies** task type. The morning briefing itself is read-only.
