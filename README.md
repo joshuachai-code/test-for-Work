@@ -1,12 +1,18 @@
 # Boardroom workflows
 
+## Daily tasks in G-Work
+
+The [morning briefing setup](gwork/README.md) checks each linked employee's live dashboard tasks and deadlines at **9:00 a.m. Malaysia time** (9:30 optional). It lists overdue, due today, upcoming and review work with the exact dashboard `task_id`. Activate it inside that employee's G-Work session; downloading this repository does not enable a schedule.
+
+When the employee chooses an existing task, both skills start and submit **that same task ID**, preserving its deadline and assignee. CTC maps to the dashboard's existing **Certified true copies** task type. The morning briefing itself is read-only.
+
 ## Shared production dashboard
 
 Both skills now include a final step to record completed preparation in the live Neon database used by [Cosec Desk](https://cosec-desk.vercel.app). They use the connected staff member's restricted database identity, check current dashboard permissions, submit the preparation task for review, and read it back before reporting success. Retrying the same run does not create a duplicate task.
 
 G-Work must load the updated skill and use a connection that permits writes while remaining pinned to that staff member's restricted database role. Updating this repository alone does not update an already imported G-Work copy or change its connection settings. Missing access or a read-only connection is reported as a pending dashboard update, never as a successful save.
 
-See the [SSM database-save instructions](ssm-form-filling/references/dashboard-completion.md) or [CTC database-save instructions](ctc-billing/references/dashboard-completion.md). The database implementation and tests are maintained in the application repository: [migration](https://github.com/joshuachai-code/cosec-desk/blob/main/scripts/migrations/gwork-skill-completion.sql) and [permission/retry tests](https://github.com/joshuachai-code/cosec-desk/blob/main/tests/gwork-skill-completion.sql).
+See the [SSM database-save instructions](ssm-form-filling/references/dashboard-completion.md) or [CTC database-save instructions](ctc-billing/references/dashboard-completion.md). The database implementation and tests are maintained in the application repository: [completion migration](https://github.com/joshuachai-code/cosec-desk/blob/main/scripts/migrations/gwork-skill-completion.sql), [task identity and type migration](https://github.com/joshuachai-code/cosec-desk/blob/main/scripts/migrations/gwork-task-sync.sql), and [permission/retry tests](https://github.com/joshuachai-code/cosec-desk/blob/main/tests/gwork-task-sync.sql).
 
 Task submission does not perform SSM lodgement, approve work, issue invoices, upload output files to Neon, or import Excel financial totals. Staff and Team Leaders see permitted submitted tasks; Director reports follow the dashboard's existing review rules.
 

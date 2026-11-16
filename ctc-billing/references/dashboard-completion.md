@@ -7,8 +7,9 @@ Use the existing Neon SQL tool on Cosec Desk's production `neondb` database and 
 Use these installed functions:
 
 - `public.cosec_gwork_identity()` — returns only the active staff identity linked to this database connection and whether Tasks is enabled.
+- `public.cosec_gwork_start_task(jsonb)` — starts the worker's existing preparation task using its dashboard `task_id`.
 - `public.cosec_gwork_record_completion(jsonb)` — creates or submits the linked worker's own preparation task, with current company and section checks, an audit record and duplicate protection.
-- `public.gwork_tasks` — reads current permitted tasks. It remains a read-only view.
+- `public.gwork_task_details` — reads current permitted tasks, including `task_id`, deadline, status, task type and workflow. `public.gwork_tasks` remains available for older clients. Both are read-only views.
 
 Before saving, run:
 
@@ -23,11 +24,25 @@ The Neon connection must permit read/write transactions for the save function. I
 
 ## Match the company and task
 
-Read permitted company rows and match the legal name, confirmed company code and registration number. A group ID alone is insufficient. Read `public.gwork_tasks` for that company; prefer the task ID already associated with this job. Resolve multiple candidate tasks rather than choosing an unrelated one.
+Read permitted company rows and match the legal name, confirmed company code and registration number. A group ID alone is insufficient. Read `public.gwork_task_details` for that company. A task selected from the morning briefing must retain that exact `task_id`; never replace it with a new task. A conversation ID, workflow run ID, Excel job ID or title is not a dashboard task ID. Resolve multiple candidate tasks rather than choosing an unrelated one. Preserve the existing deadline, assignee and task type.
 
 Use a preparation task owned by the authenticated worker. This action cannot submit another employee's task, complete a linked document or statutory milestone, approve work, issue an invoice or modify rates. A directory-only Allow viewing rule is not permission to work for that company. If an existing task includes signing, lodgement or other unfinished obligations, use a separate preparation task when authorized. Existing tasks linked through `document_id` or a filing milestone must use the dashboard workflow instead.
 
 Use one stable run ID and one SHA-256 digest for the checked output/evidence manifest. Save the exact request and returned task ID in a local completion receipt without credentials. Do not regenerate the run ID for a retry. SSM uses the finished form's SHA-256; CTC uses the SHA-256 of the saved, checked per-run evidence manifest described in its SKILL.md.
+
+## Start the selected task before working
+
+Once the worker asks to start an existing, eligible preparation task, call:
+
+```sql
+SELECT public.cosec_gwork_start_task($1::jsonb) AS result;
+```
+
+The request has only `skill` (`ctc-billing` or `ssm-form-filling`), `company_code` and the exact existing `task_id`. Use the bound-parameter or validated hexadecimal approach described below, with this function name. Read back that same ID in `public.gwork_task_details` and confirm `in_progress`, the assignee and unchanged deadline. An identical start retry returns `already_started:true` without another start event. It cannot reopen a submitted or verified task. A failed start must be disclosed; do not claim the dashboard shows work in progress.
+
+The morning reminder is read-only: it must not start or submit tasks automatically. Start only after the worker chooses work. If no matching dashboard task exists, say that clearly; an authorized new preparation task may receive its database-generated ID when saved at completion. Never invent an ID or silently create another task for existing work.
+
+CTC uses the dashboard service linked to `ctc-billing` (currently **Certified true copies**, service ID `standard-2`). The database resolves that mapping centrally, so a service rename retains its identity. Reject a CTC run against an unrelated task type, and reject an SSM run against a CTC task. For an existing untyped CTC preparation task, the server adds the CTC type. This classification does not change agreed quantities/prices, approve charges or issue an invoice; a newly classified unpriced task remains unpriced.
 
 ## Save with the narrow completion function
 
@@ -53,7 +68,7 @@ Request for a new preparation task:
 }
 ```
 
-For CTC use `"skill":"ctc-billing"`. To submit an existing eligible task, add its exact `task_id`; omit `title` unless already included in the original request. New tasks are assigned to the authenticated worker and require the worker to belong to the company's team. Do not include `ownerId`, `status`, `invoice`, `rate`, `milestoneKey` or other undocumented fields; they are rejected.
+For CTC use `"skill":"ctc-billing"`. To submit an existing eligible task, supply the exact `task_id` selected and started earlier; omit `title` unless already included in the original request. For new work without an existing task, the server creates a unique `task_id`; preserve the returned ID for later work. New tasks are assigned to the authenticated worker and require the worker to belong to the company's team. An unfinished matching CTC task prevents ID-less creation: use its existing ID. Do not include `ownerId`, `status`, `invoice`, `rate`, `milestoneKey` or other undocumented fields; they are rejected.
 
 Limits: `title` up to 160 characters; `note` 1–2,000 characters; `run_id` up to 128 ASCII letters/digits/dots/underscores/colons/hyphens, starting with a letter or digit. Use the actual completion date in Asia/Kuala_Lumpur, never a future date or the document's signing/lodgement date. Do not truncate essential references to fit.
 
@@ -63,7 +78,7 @@ The function atomically saves the task as `submitted`, records the linked employ
 
 ## Read back and recover safely
 
-Make a fresh query for the exact company/task in `public.gwork_tasks`. Check assignee, completion date, note and current status against the result. The note must identify the run/digest. When role reporting hides a just-submitted task (currently Directors), replay the **identical original request**: `already_recorded:true` confirms the persisted receipt and returns the task's current status without changing it. Do not change a request lacking `task_id` by adding the returned ID on replay; keep the exact original fields.
+Make a fresh query for the exact company/task in `public.gwork_task_details`. Check the same `task_id`, unchanged deadline, assignee, task type, completion date, note and current status against the result. For CTC, verify `service_id` is the dashboard's CTC service and `workflow` is `ctc-billing`. The note must identify the run/digest. When role reporting hides a just-submitted task (currently Directors), replay the **identical original request**: `already_recorded:true` confirms the persisted receipt and returns the task's current status without changing it. Do not change a request lacking `task_id` by adding the returned ID on replay; keep the exact original fields.
 
 A timeout may occur after a successful commit. Read back first; if necessary, replay only the identical request. The database serializes writes and returns the existing receipt instead of duplicating tasks, audit events or submissions. Reusing a run ID with different content is rejected. Never switch identities or create a fresh run ID just to retry.
 
