@@ -1,11 +1,11 @@
 ---
 name: morning-brief
-description: Set up or run a daily G-Work morning briefing from the live Cosec Desk database. Show the linked employee's pending tasks, deadlines and existing task IDs. Use for morning work lists, overdue-task checks and daily reminders at 9 or 9:30 a.m. Malaysia time.
+description: Set up or run a daily G-Work morning briefing from the live Cosec Desk database. Show the linked employee's pending tasks, deadlines and existing task IDs. Use for morning work lists, overdue-task checks, daily reminders at 9 or 9:30 a.m. Malaysia time, and explicit Team Leader review requests after a briefing.
 ---
 
 # Morning brief
 
-Use the live database behind https://cosec-desk.vercel.app as the source of truth. Keep the briefing read-only. Do not start, create, submit, reassign or approve dashboard tasks, change deadlines, or run CTC/SSM work during a briefing.
+Use the live database behind https://cosec-desk.vercel.app as the source of truth. Keep the briefing itself read-only. Do not start, create, submit, reassign or approve dashboard tasks, change deadlines, or run CTC/SSM work during a briefing. A later direct user request to verify or return a task is a separate action: follow [references/task-review.md](references/task-review.md) instead of refusing because the chat started with a briefing.
 
 ## Find the employee's SQL tool and project
 
@@ -57,4 +57,4 @@ Only create or change a schedule when requested. Default to **daily at 09:00 Asi
 
 The database `task_id` is the dashboard task's existing ID. It is different from the G-Work conversation ID, recurring-reminder ID, skill `run_id` and Excel `job_id`. Preserve it exactly.
 
-When the employee later chooses a task to work on, use the separately installed CTC or SSM workflow, re-read permissions and status, and update that same task through `public.cosec_gwork_start_task(jsonb)` and, after verified preparation, `public.cosec_gwork_record_completion(jsonb)`. Preserve its deadline and assignee. CTC uses the dashboard's mapped **Certified true copies** service. Linked document/statutory tasks follow the dashboard workflow. This package does not include or replace the CTC/SSM workflows and does not authorize approvals, invoices or SSM lodgement.
+When the employee later chooses a task to work on, use the separately installed CTC or SSM workflow, re-read permissions and status, and update that same task through `public.cosec_gwork_start_task(jsonb)` and, after verified preparation, `public.cosec_gwork_record_completion(jsonb)`. Preserve its deadline and assignee. CTC uses the dashboard's mapped **Certified true copies** service. Linked document/statutory tasks follow the dashboard workflow. This package does not include or replace the CTC/SSM workflows. Team Leader review requires a separate explicit user request and the checks in references/task-review.md. Neither briefing nor review issues invoices or performs SSM lodgement.

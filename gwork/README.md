@@ -44,3 +44,7 @@ For the existing Daniel demo connection only, Hi2 is pinned to `gwork_daniel`; i
 The database setup is maintained in [cosec-desk](https://github.com/joshuachai-code/cosec-desk/blob/main/scripts/migrations/gwork-task-sync.sql). Only provisioned staff connections can read or update permitted records; granting access to the reminder does not grant more database permissions.
 
 Official scheduling reference: [G-Work Scheduled Tasks](https://www.gptbots.ai/docs/workspace/app-settings/scheduled-tasks).
+
+## Explicit reviews after the briefing
+
+A later direct request to verify or return an exact task uses the same restricted connection and `cosec_gwork_review_task(jsonb)`. It is separate from the automatic read-only briefing. Only an active Team Leader with Tasks and company/team access can review another person's submitted work; self-review and changed submissions are rejected. Linked records and Work history update atomically. See [the review procedure](task-review.md). Refresh the installed package, and update an existing saved reminder with the current installer if it should carry these follow-up instructions.
