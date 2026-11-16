@@ -1,11 +1,19 @@
 ---
 name: ctc-billing
-description: Run Boardroom CTC billing by clarifying the company, retrieving its details from OneDrive, inspecting uploaded CTC scans to establish billable quantities, and preparing records, approval, and Finance handoff. Use for CTC billing requests, billing checks, and workflow status reviews.
+description: Run Boardroom CTC billing by identifying the company, retrieving its OneDrive details, inspecting CTC scans, calculating supported quantities and charges, updating both record books, and preparing approval and Finance handoff. Record finished preparation in the shared Cosec Desk database through the restricted staff save action and check persistence. Use for CTC billing requests, billing checks, and workflow status reviews.
 ---
 
 # CTC Billing Workflow
 
-Follow the seven-step sequence in the supplied `CTC Workflow.docx`. This skill captures that procedure and the fields visible in its example forms; it does not depend on the original attachment remaining accessible.
+Follow the seven-step sequence in the supplied `CTC Workflow.docx`, with the user-confirmed overrides below taking precedence. This skill captures that procedure and the fields visible in its example forms; it does not depend on the original attachment remaining accessible.
+
+## User-confirmed billing defaults
+
+Read `scripts/pricing.json` before preparing a new bill. The default billing unit is **page**. Do not ask whether billing is per page, copy, or set. Use the saved standard CTC rate per page once configured, without asking for it again on every run. A null rate means not configured, never zero or free: ask only for the missing rate before finalising charges. Keep confirmed company/job-specific rates as explicit exceptions with their source; resolve conflicts rather than silently replacing an agreed price. Preserve existing job rate snapshots when defaults change.
+
+Instruction proof is **not required**. The worker's request in this conversation is sufficient to start. Do not request an email, WhatsApp message, screenshot, or client-instruction attachment as a prerequisite. If one is voluntarily supplied, use its relevant details. Ask only for specific missing operational facts needed for the current step, not documentary proof of the instruction.
+
+Count billable CTC pages from the uploaded scans, including each confirmed separate certified copy's pages. Check duplicate uploads, blank/non-CTC pages, and unreadable pages; raw PDF page count is not automatically the billable count. Ask only where the billable page count is genuinely unclear. Calculate CTC fees as confirmed billable pages × the applicable RM-per-page rate. Separate printing charges apply only when confirmed; a null printing setting does not mean zero and must not silently add a printing fee. If charged per page, confirm the printing page quantity and calculate its total separately. Store `quantity` as billable CTC pages, `billing_unit` as `page`, `rate_rm` as the applied CTC rate per page, and `printing_rm` as the total printing charge, not its unit rate. Retain quantity/rate evidence with the job.
 
 ## Start a CTC billing run
 
@@ -36,13 +44,13 @@ Inspect every relevant scan page visually, using OCR as an aid where useful. Ide
 
 A scanned page is not automatically one billable CTC copy. A multi-page document may form one copy, and one scanned image may contain multiple copies. Repeated images may be duplicate uploads or separately certified copies: do not automatically charge twice or deduplicate without evidence. Scan files may also represent a single original scanned once but printed in multiple copies; flag that the scan alone cannot establish physical copy quantity. Visible stamping does not by itself prove valid certification or completion of an unobserved physical task.
 
-Reconcile the scan-derived count against the client request and available completion evidence. Apply the confirmed billing unit (per page, document copy, or set) and fee schedule. If pages are missing, unreadable, or boundaries/duplicates/sets are ambiguous, identify the exact issue and ask for clarification or a clearer scan before finalising the affected quantity. Never infer the billable quantity solely from PDF page count or OCR output.
+Reconcile the scan-derived count against the client request and available completion evidence. Apply the preset per-page unit and configured fee schedule; use another unit only for an explicitly confirmed exception. If pages are missing, unreadable, or boundaries/duplicates/sets are ambiguous, identify the exact issue and ask for clarification or a clearer scan before finalising the affected quantity. Never infer the billable quantity solely from PDF page count or OCR output.
 
-Show the count breakdown before calculating the bill. Use an evidence-supported, unambiguous count directly; obtain clarification for any unresolved quantity or billing unit. Record the resolved quantity, unit, evidence references, and any user clarification in the operational job record, then continue the seven-step workflow below. For scans of work already completed, use evidence to reconcile steps 1–2 rather than directing staff to print and stamp the same documents again.
+Show the billable-page breakdown before calculating the bill. Use an evidence-supported, unambiguous count directly; obtain clarification for unresolved page quantities, without asking the worker to reconfirm the preset page unit. Record the resolved quantity, unit, evidence references, and any user clarification in the operational job record, then continue the seven-step workflow below. For scans of work already completed, use evidence to reconcile steps 1–2 rather than directing staff to print and stamp the same documents again.
 
 ## Scope and inputs
 
-Identify the client/company, instruction date and email or WhatsApp reference, requested documents, number of CTC copies, printing requirements, responsible staff member, job/order reference, and delivery requirements. Obtain the applicable fee schedule and relevant working records or templates when needed. Ask only for missing information that affects the current step; prepare unaffected work in the meantime.
+Identify the client/company, requested documents, billable CTC pages, printing requirements, responsible staff member, job/order reference, and delivery requirements. Use the conversation request as the instruction; record an external instruction date/reference only if supplied. Read the preset fee schedule and obtain relevant working records or templates when needed. Ask only for missing information that affects the current step; prepare unaffected work in the meantime.
 
 Use actual client instructions and job evidence. Treat sample clients, dates, signatures, amounts, and rates in the source document as examples, never as defaults for a new job. The document does not define fee rates, current tax treatment, payment terms, or invoice numbering rules.
 
@@ -50,7 +58,7 @@ Use actual client instructions and job evidence. Treat sample clients, dates, si
 
 ### 1. Receive client instructions
 
-Read the supplied email or WhatsApp instruction. Capture the company, requested documents, quantities, contact, date, and delivery details. Flag unclear quantities or document versions before calculating charges or preparing copies. Retain a reference to the instruction with the job.
+Use the worker's conversation request to start; no email or WhatsApp proof is required. Capture the company, requested documents, quantities, contact, date, and delivery details that are supplied or available in company records. Flag only missing facts that affect the current step. Retain a conversation reference where available; do not block the workflow for lack of an external instruction attachment.
 
 ### 2. Prepare documents and cover letter
 
@@ -60,7 +68,7 @@ Track printing and physical CTC stamping as staff actions unless an available, a
 
 ### 3. Record the job in the Job Assignment sheet
 
-Enter the reconciled number of billable CTC copies or sets from scan inspection, using the confirmed billing unit, and the printing fees. Use the existing sheet's relevant CTC categories and total fields. Where available, populate its order number, company name, assignment date, promised delivery date, delivery mode, completion dates/times, approver, and actual delivery date from evidence. Leave future completion and approval fields pending.
+Enter the reconciled billable CTC page count from scan inspection, using the preset page unit, and any confirmed printing fees. Use the existing sheet's relevant CTC categories and total fields. Where available, populate its order number, company name, assignment date, promised delivery date, delivery mode, completion dates/times, approver, and actual delivery date from evidence. Leave future completion and approval fields pending.
 
 Calculate charges using confirmed quantities and rates. Keep CTC charges and printing fees identifiable, and show additional authorized charges separately.
 
@@ -80,7 +88,7 @@ Record the job in the **CTC cosec record book Excel workbook in OneDrive**, foll
 
 For every workflow run, separately record **work done by (agent)** in the CTC cosec record book, linked to the same job and workflow run. Capture the actual agent's name or identifier and the work performed in this area. The two areas may have different agents; do not copy attribution from one book to the other without evidence. If the identity is missing, mark it pending confirmation rather than inventing it. Keep staff performing physical tasks distinguishable from any software agent preparing records.
 
-Do not infer current rates or a mandatory monthly billing cycle from handwritten sample entries or month-end totals. The user has selected Excel workbooks in OneDrive for both books. If either workbook is unavailable, stage its proposed entry and mark that book pending; the local dashboard database is not a substitute for either Excel write.
+Do not infer current rates or a mandatory monthly billing cycle from handwritten sample entries or month-end totals. The user has selected Excel workbooks in OneDrive for both books. If either workbook is unavailable, stage its proposed entry and mark that book pending; a database task record is not a substitute for either Excel write.
 
 ### 6. Prepare billing for superior approval
 
@@ -99,9 +107,25 @@ Use only confirmed applicable charges and tax treatment. The example's SST rate 
 
 Prepare the approved billing request and supporting job details for Finance. Finance owns final invoice issuance. Track the invoice number, issue date, amount, and invoice file/reference when Finance provides them. A prepared Note of Fees or a handoff alone is not evidence that an invoice was issued.
 
-## Executive dashboard integration
+## Save finished CTC preparation to the production dashboard
 
-A local dashboard is implemented at http://127.0.0.1:8765 when the Boardroom dashboard server is running. It reads and reconciles the two Excel record books in the locally synced OneDrive folder on every refresh. SQLite is available only for explicitly requested temporary staging and is not added to Excel reporting totals. These requirements supplement the original Word workflow.
+After the preparation work for this run is complete, quantities and charges are supported, and both Excel entries have been written and read back successfully, record the finished **CTC preparation task** in the shared production database used by `https://cosec-desk.vercel.app`. Read [references/dashboard-completion.md](references/dashboard-completion.md) for the installed Neon save action, exact request format, identity checks, duplicate protection and read-back procedure. The Excel writer alone does not save a task to Neon.
+
+First call `public.cosec_gwork_identity()` through the connection pinned to the worker's restricted database login. Confirm the linked dashboard identity and current Tasks access. Match the company code and registration number, and reuse the exact preparation task when one exists. A company visible in the directory is not necessarily writable. Never choose an owner role, substitute another employee ID, reassign a colleague's task or grant permissions to complete this step.
+
+Create a per-run evidence manifest in the authorized local working area. Record the stable `job_id` and `run_id`, confirmed company code, preparation scope and completion date, quantity-reconciliation reference, prepared billing-package reference, and each Excel book's path, sheet, exact job/run key, verified saved row and read-back outcome. Preserve each book's distinct work-done-by attribution. Keep charges, scan references and personal data in the authorized evidence/books rather than shared task notes. Hash the exact saved manifest bytes with SHA-256; use that digest as `output_sha256` and preserve it on retries. Do not claim a cloud upload merely because a OneDrive-folder file exists.
+
+Call `public.cosec_gwork_record_completion(jsonb)` with `skill` set to `ctc-billing`, the stable run ID, company code, actual completion date, manifest digest and a concise preparation note. Use the existing task ID if it is owned by the authenticated worker and eligible. Otherwise use a clear new title such as `Prepare CTC billing package — <job reference>` when current permissions permit. Include job/run identifiers, confirmed billable page quantity, evidence/package references, both books' verified status and outstanding approval or Finance actions in the note. Do not invent quantities, prices, files, approvals or invoice references.
+
+The database action submits preparation for review; it does **not** approve the charges, issue an invoice, mark a statutory milestone complete or change the Excel job's operational/billing status. If the overall CTC job still requires physical work, superior approval or Finance issuance, keep those stages pending. A finished billing-preparation task may be submitted while approval is pending, but do not submit a broader task whose promised work is unfinished. Never treat submission for task review as proof of superior billing approval.
+
+Check the persisted company, task ID, assignee, completion date, note and status using the reference procedure. Record `saved_and_checked` only after that check. Preserve later review decisions and use the identical request on a retry so no duplicate task or submission is created. Do not add task counts to Excel job counts or treat a task note as an issued invoice in financial totals.
+
+If either book failed, quantity/rate evidence is unresolved, the preparation is incomplete, or its manifest cannot be checked, do not submit completion. If the database connection is missing, read-only or denied, preserve the prepared package, verified book entries and pending receipt. Report **“CTC preparation completed; dashboard update pending — <actual reason>.”** Report each book, cloud sync, database task, superior approval and Finance issuance separately. Never claim database success from an attempted call.
+
+## Local Excel executive dashboard
+
+A separate local Excel-reporting dashboard is available at http://127.0.0.1:8765 when its server is running. It reads and reconciles the two locally synced Excel books on every refresh. This is not the production Cosec Desk; record finished preparation in Neon using the preceding section even when the local report is available. SQLite remains temporary staging only and is not added to Excel reporting totals. These reporting definitions supplement the original Word workflow.
 
 Keep agent attribution in the two operational record books. The executive dashboard displays generalised information by work sub-category, including CTC and other configured categories, rather than individual agents, clients, documents, or detailed job records. Its core measures are amount billed, pending jobs, and total work done for each sub-category.
 
@@ -121,7 +145,7 @@ Use available authorized tools and established templates. Creating or invoking t
 
 If a required system or physical record is unavailable, produce a ready-to-enter draft and identify the outstanding action. Do not mark an inaccessible record as updated. If a submission has an uncertain outcome, check for the existing record or invoice before retrying to avoid duplicates.
 
-For a job run, return a compact status summary covering all seven steps, with each marked completed, prepared, pending, blocked, or not applicable. Include the confirmed charges, threshold basis and invoice decision, record references, approval status, Finance issuance status, and next owner/action. Distinguish verified completion from prepared drafts. Do not add payment collection or other downstream steps as requirements of this source workflow.
+For a job run, return a compact status summary covering all seven steps, with each marked completed, prepared, pending, blocked, or not applicable. Include confirmed charges, threshold basis and invoice decision, each book's verified write result, cloud-sync status, approval status, Finance issuance status and next owner/action. Separately state the production database result: saved and checked (company/task/status), pending (with the actual blocker or uncertain outcome), or not submitted (incomplete preparation). Link to the production dashboard when saved; do not invent a task-specific URL. Distinguish verified completion from prepared drafts. Do not add payment collection or other downstream steps as requirements of this source workflow.
 
 Include the work-done-by agent for each of the two record-book areas in the operational handoff, and identify any missing attribution. Supply the generalised category-level reporting data when requested without exposing operational identities on the executive dashboard.
 
@@ -137,39 +161,39 @@ Both contain a `Records` sheet with table headers on row 5. Preserve header name
 
 Prepare a temporary JSON file containing `job_id`, `run_id`, `company_name`, `created_date` (YYYY-MM-DD), `subcategory` (`CTC`), `general_agent`, `cosec_agent`, and `work_status` (`pending`, `blocked`, or `completed`). Supply `completed_date` when completed. Include `general_work` and `cosec_work` to describe work performed in each area. Record `billing_status` as `pending`, `issued`, or `not_required`. An issued invoice requires `invoice_id`, `invoice_date`, and integer `billed_sen` in MYR sen.
 
-Include known `company_id`, `company_source`, `scan_reference`, `quantity_evidence`, `approval_reference`, `due_date`, `workflow_stage`, `quantity` (integer), `billing_unit` (copy/set/page), `rate_rm`, `printing_rm`, and `charge_sen` (integer agreed total in MYR sen). The books store monetary amounts in RM; the writer converts sen fields. Do not fill unknown rates or quantities with guessed zeros. Use `Pending confirmation` for an unknown agent and disclose the outstanding attribution.
+Include known `company_id`, `company_source`, `scan_reference`, `quantity_evidence`, `approval_reference`, `due_date`, `workflow_stage`, `quantity` (integer), `billing_unit` (`page` by default; copy/set only for a confirmed exception), `rate_rm`, `printing_rm`, and `charge_sen` (integer agreed total in MYR sen). The books store monetary amounts in RM; the writer converts sen fields. Do not fill unknown rates or quantities with guessed zeros. Use `Pending confirmation` for an unknown agent and disclose the outstanding attribution.
 
 Run `python3 <skill-directory>/scripts/records.py record <temporary-job-json>` using the bundled Python runtime when necessary. The helper validates the input, upserts the matching job/run into both Excel books, and reads them back. It uses the bundled Node runtime and `@oai/artifact-tool` through the local `node_modules` link; when installing elsewhere, resolve those dependencies before use. It creates a shared update timestamp automatically unless the run already has a timestamp to preserve for a retry. Use stable job/run IDs and preserve all confirmed fields when updating a run. Close the books in Excel before writes. Never overwrite unrelated manual changes to resolve a conflict.
 
-A successful result verifies both local books, not OneDrive cloud sync. The two file replacements are not a cloud transaction: a partial write is reported and the dashboard blocks inconsistent source data until both books agree. Review any writer lock left after an interruption before retrying. Use the same job/run ID for recovery. The writer keeps recovery copies in the OS temporary directory. Do not report the recording step complete after a failure.
+A successful result verifies both local books, not OneDrive cloud sync. The two file replacements are not a cloud transaction: a partial write is reported and the local Excel report blocks inconsistent source data until both books agree. Review any writer lock left after an interruption before retrying. Use the same job/run ID for recovery. The writer keeps recovery copies in the OS temporary directory. Do not report the recording step complete after a failure.
 
 `records.py stage <temporary-job-json>` remains available only when explicitly needed to stage a blocked run. It does not update the Excel books or the executive dashboard. Do not substitute staging for the required two-book recording.
 
-The dashboard at http://127.0.0.1:8765 refreshes every 30 seconds. Its local server is `dashboard/server.py` in the Boardroom workspace. Source access failures or mismatched rows stop reporting rather than showing stale values as current. Executive access uses a shared local access key; individual executive accounts are not implemented.
+The separate local Excel dashboard at http://127.0.0.1:8765 refreshes every 30 seconds. Its local server is `dashboard/server.py` in the Boardroom workspace. Source access failures or mismatched rows stop reporting rather than showing stale values as current. Executive access uses a shared local access key; individual executive accounts are not implemented.
 
-## Alignment with Boardroom Staff Desk
+## Production tasks and local reporting
 
-The reference conversation is “Research Boardroom services and plan” (Boardroom project), covering the hosted Boardroom Staff Desk. Its formal navy design, configurable deadline warnings, review/approval stages, and service-price snapshots inform the local executive dashboard. The hosted staff application and this local temporary store are not synchronised.
+The production Cosec Desk reads tasks from Neon. This skill records finished preparation there through the restricted save action; it must not stop at a local SQLite entry or Excel-only update. The separate local Excel report still reads the books. No automatic import of all Excel fields, historical jobs, approval evidence or issued-invoice totals into the production dashboard is implemented by this skill. Do not claim that saving a task synchronises those financial records.
 
 When known, include `due_date` (YYYY-MM-DD), `workflow_stage` (`received`, `preparation`, `review`, `approval`, `finance`, or `completed`), and `charge_sen` (the agreed, unbilled charge in integer MYR sen) in the local record. Never create a due date or charge to fill a dashboard. Preserve the agreed service name and rate snapshot for each job; later price-list changes must not reprice an existing job. The financial-statement preparation preset of RM1,000 belongs to that separate service and is not a CTC rate.
 
-The executive dashboard counts overdue work, work due within 3/7/14/30 days, and jobs awaiting review or approval. Unbilled charges are separate from issued invoice totals. Reviewer/approver assignments stay in operational records; reporting a stage does not authorise any agent to perform someone else's approval. Only record approval completion on evidence from the assigned approver. Staff company filters and document details from the reference application do not override the aggregate-only executive view requested in this conversation.
+The local Excel executive dashboard counts overdue work, work due within 3/7/14/30 days, and jobs awaiting review or approval. Unbilled charges are separate from issued invoice totals. Reviewer/approver assignments stay in operational records; reporting a stage does not authorise any agent to perform someone else's approval. Only record approval completion on evidence from the assigned approver. Staff company filters and document details from the reference application do not override the aggregate-only executive view requested in this conversation.
 
 
-## OneDrive Excel record books and dashboard source
+## OneDrive Excel books and local reporting source
 
 The user requires work done to be recorded in **both** Excel books on every CTC billing workflow run:
 
 1. `CTC General record book.xlsx` — company, job/run identifiers, work description, date, work-done-by agent, operational status, and supporting references.
 2. `CTC cosec record book.xlsx` — the same company/job/run linkage plus work-done-by agent, confirmed billable quantities and units, rate/charge breakdown, billing/approval status, and invoice evidence when issued.
 
-These workbooks have been generated in the configured `CTC Records` folder. The dashboard reads their local synced copies; cloud sync completion must still be verified separately.
+These workbooks have been generated in the configured `CTC Records` folder. The local Excel report reads their locally synced copies; cloud sync completion must still be verified separately.
 
 Use stable `job_id` and `run_id` columns in both books, and a stable company identifier where available. Retrying a write must update the matching row instead of appending a duplicate. Preserve separate `work_done_by_agent` values for each book, original work dates, source references, and existing confirmed billing facts. Retain separate rows for distinct workflow runs while aggregating distinct jobs for reporting.
 
 Write each book, then read back its saved row to verify the result. Track each book's write status independently. If one succeeds and the other fails, report partial completion and retry only the outstanding write after checking for its existing row. Never report the recording step complete until both entries are verified. A successful local save confirms local persistence, not OneDrive cloud synchronisation. Report sync as pending or unverified when no sync evidence is available.
 
-The two books are required operational records and are **one source among the dashboard's reporting sources**. The intended dashboard integration reads their structured tables, reconciles rows by job/run identifiers, and uses the general book for work/status information and the cosec book for billing detail. Count each job and issued invoice only once across the books and across workflow runs. Flag missing counterparts, conflicting fields, or missing required data rather than silently merging inconsistent entries. Do not add Excel totals to staging-database totals for the same jobs.
+The two books are required operational records and are **sources for the local Excel reporting view**. That reporting integration reads their structured tables, reconciles rows by job/run identifiers, and uses the general book for work/status information and the cosec book for billing detail. Count each job and issued invoice only once across the books and across workflow runs. Flag missing counterparts, conflicting fields, or missing required data rather than silently merging inconsistent entries. Do not add Excel totals to staging-database totals for the same jobs.
 
 Keep company and agent detail in the operational books. Only generalised amounts billed, pending jobs, completed work, and related aggregate measures reach the executive dashboard. Record source freshness and import status so stale or partially imported records are not presented as current confirmed data.
 

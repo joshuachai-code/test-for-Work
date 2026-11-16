@@ -1,10 +1,20 @@
 # Boardroom workflows
 
+## Shared production dashboard
+
+Both skills now include a final step to record completed preparation in the live Neon database used by [Cosec Desk](https://cosec-desk.vercel.app). They use the connected staff member's restricted database identity, check current dashboard permissions, submit the preparation task for review, and read it back before reporting success. Retrying the same run does not create a duplicate task.
+
+G-Work must load the updated skill and use a connection that permits writes while remaining pinned to that staff member's restricted database role. Updating this repository alone does not update an already imported G-Work copy or change its connection settings. Missing access or a read-only connection is reported as a pending dashboard update, never as a successful save.
+
+See the [SSM database-save instructions](ssm-form-filling/references/dashboard-completion.md) or [CTC database-save instructions](ctc-billing/references/dashboard-completion.md). The database implementation and tests are maintained in the application repository: [migration](https://github.com/joshuachai-code/cosec-desk/blob/main/scripts/migrations/gwork-skill-completion.sql) and [permission/retry tests](https://github.com/joshuachai-code/cosec-desk/blob/main/tests/gwork-skill-completion.sql).
+
+Task submission does not perform SSM lodgement, approve work, issue invoices, upload output files to Neon, or import Excel financial totals. Staff and Team Leaders see permitted submitted tasks; Director reports follow the dashboard's existing review rules.
+
 ## CTC billing
 
 Download [ctc-billing.skill](ctc-billing.skill) for the packaged workflow, or inspect [the skill source](ctc-billing/SKILL.md).
 
-The skill covers company lookup from locally synced OneDrive, scanned-copy quantity review, recording work in both Excel books, approval, and Finance handoff. The [local executive dashboard](dashboard/README.md) reads the two record books and exposes aggregate reporting.
+The skill covers company lookup from locally synced OneDrive, scanned-copy quantity review, recording work in both Excel books, approval, and Finance handoff. Once preparation and both book writes are verified, it records the preparation task in production Cosec Desk. The separate [local executive dashboard](dashboard/README.md) reads the two record books and exposes aggregate reporting.
 
 This checkout is configured for the original Mac workspace. Before using another computer, update `ctc-billing/scripts/books.json` with its OneDrive location and resolve the Node/Python runtimes and `@oai/artifact-tool` dependencies. Dependency symlinks, access keys, client information, and live workbooks are not included.
 
@@ -27,7 +37,9 @@ The workflow reuses a form already supplied and requests it only once if absent.
 3. Ask only for specific missing, conflicting, unreadable, or updated information.
 4. Fill a working copy while preserving the form's layout and wording.
 5. Reopen the saved output and compare every populated field against its source or documented calculation. Check completeness, totals, repeated details, and rendered appearance.
-6. Save matching, verified copies to both OneDrive and local storage, and return links to both.
+6. Save matching, verified copies to both OneDrive and local storage.
+7. Record the finished preparation through the staff-scoped Neon save function and read back the saved task.
+8. Return links to both files and report the database result separately: saved and checked, pending, or not submitted.
 
 Unsupported values must not be invented. Unresolved required information keeps the result from being released as verified. Data-complete forms that still need human signatures are labelled `READY-FOR-SIGNATURE`; the workflow does not create signatures or automatically lodge documents with SSM.
 
@@ -45,4 +57,4 @@ Outputs use company-specific subfolders and unique filenames. On another compute
 
 The delivery helper checks the recorded verification manifest and confirms matching file hashes in both destinations. It does not independently fact-check company information; the source and visual verification steps remain necessary. A successful save into the synced OneDrive folder does not itself confirm cloud upload.
 
-SSM form completion does not update the CTC record books or add SSM activity to the dashboard. Company records and completed forms are not included in this repository.
+SSM form completion does not update the CTC record books or the local Excel report. A successful, checked database save adds a preparation task to production Cosec Desk under its existing staff permissions and review rules. Company records and completed forms are not included in this repository.

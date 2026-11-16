@@ -1,6 +1,6 @@
 ---
 name: ssm-form-filling
-description: Fill SSM and other company forms with a single form intake and automatic lookup of company records in the configured OneDrive Company Information folder. Ask only for missing or conflicting information, verify the saved form against evidence, and deliver copies locally and in OneDrive. Use for company document filling, not automatic signing or lodgement.
+description: Fill SSM and other company forms with a single intake and automatic company-record lookup in the configured OneDrive folder. Ask only for missing or conflicting information, verify the saved form, deliver local and OneDrive copies, and record the finished preparation in the shared Cosec Desk database through its restricted staff connection. Report blocked database saves explicitly. Use for company form preparation, not automatic signing or lodgement.
 ---
 
 # Company form filling
@@ -93,7 +93,7 @@ Fix discrepancies and repeat the affected checks after every correction. Do not 
 
 Record the checked output SHA-256, source references, per-field check outcomes, required human actions, and overall status in a local verification manifest. A manifest or script result is evidence of checks recorded, not a guarantee that unsupported data has been detected automatically. Use [references/verification-manifest.md](references/verification-manifest.md) for the helper's contract.
 
-## 6. Save two verified copies and report the result
+## 6. Save two verified copies
 
 Use a unique filename such as `<company>_<form-id>_<as-of-date>_<run-id>_VERIFIED.pdf`, or `READY-FOR-SIGNATURE` when human execution is outstanding. Use the actual output extension. Do not overwrite the source or an unrelated prior output.
 
@@ -101,4 +101,24 @@ After completing verification, run `python3 scripts/deliver_verified.py --file <
 
 If one destination fails, preserve the successful copy, report the partial save and missing destination, and retry only after access is resolved. Identical existing copies are safe to reuse; different existing content must not be overwritten. Do not claim both copies exist until both read-back hashes match the checked working file.
 
-Return links to both final files, the verification outcome, and any remaining signature/attestation actions. Confirm local OneDrive-folder persistence separately from cloud synchronisation: a successful file write does not prove upload to Microsoft's cloud. Do not submit the form or update the CTC books merely because this separate form-filling workflow completed.
+Confirm local OneDrive-folder persistence separately from cloud synchronisation: a successful file write does not prove upload to Microsoft's cloud. Do not submit the form or update the CTC books merely because this separate form-filling workflow completed. Continue to the database-save step before reporting the run as complete.
+
+## 7. Record the finished preparation in Cosec Desk
+
+After verification and both file saves succeed, record the preparation result in the shared production database used by the dashboard at `https://cosec-desk.vercel.app`. Follow [references/dashboard-completion.md](references/dashboard-completion.md) for the installed Neon save function, identity checks, matching, retries and read-back checks.
+
+Use `public.cosec_gwork_record_completion(jsonb)` through the Neon connection pinned to the worker's restricted database login. First call `public.cosec_gwork_identity()` and confirm the linked dashboard identity, the worker's current company access and the exact task before writing. Match the confirmed company code and registration number; a group ID or similar company name alone is insufficient. Reuse the task identified for this filing. If none exists, create a preparation task assigned to the authenticated worker only when their current permissions allow it. Resolve ambiguous task matches instead of updating an unrelated task.
+
+Record the form title/revision, company code, filing period or transaction, stable run ID, verified output filename and SHA-256, saved file locations, completion date, verification outcome and remaining human actions. Use a real permission-controlled cloud URL only when available; do not treat a local OneDrive path as an uploaded attachment or shareable URL. Keep identity documents, field-level personal data, credentials and the evidence ledger out of task notes.
+
+Submit the **form-preparation task** for Team Leader review using the save function, which records status `submitted`. Do not set it to `verified`, mark a filing milestone lodged, change billing, or approve your own work. A `VERIFIED` output filename means the document checks passed; it does not mean a Team Leader verified the task or SSM accepted a filing. If the existing task also requires signing or lodgement, do not submit that broader task based only on form preparation; use a separate preparation task when permitted or report the mismatch.
+
+Read the saved task back through the same authenticated account. Confirm the exact company, task ID, assignee, completion date and completion note identifying this run and output hash. Expect `submitted` on a new save; preserve a later review status as described in the reference. Only then say the result was recorded in the database and is available in the dashboard under its existing role rules.
+
+Treat missing write tools, missing authentication, denied access or a read-only Neon connection as a blocked save. Never switch to `neondb_owner`, grant permissions, select a more powerful role, supply another employee ID, or directly edit `public.app_desk` to get around the block. `public.gwork_tasks` is for reads; only the installed completion function performs the limited write. Preserve the completed files and the pending completion details locally, and report: **“Form completed; dashboard update pending — the connected account cannot save task updates.”** For other errors, state the actual reason. Never claim the dashboard was updated because a form was generated or a write was merely attempted.
+
+For an incomplete draft, failed verification or partial file delivery, do not submit completion. Report the specific unfinished step and preserve any successful files.
+
+## 8. Report the files and dashboard result separately
+
+Return links to the final files, the verification outcome and outstanding signature/attestation actions. State one database outcome explicitly: **saved and checked** (company, task ID and status), **pending** (write unavailable or result uncertain), or **not submitted** (preparation/delivery incomplete). Link to `https://cosec-desk.vercel.app` when saved; do not invent a task-specific URL. Distinguish file preparation, dashboard task submission and SSM lodgement in the result.
