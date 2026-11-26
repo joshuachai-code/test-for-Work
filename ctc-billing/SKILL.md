@@ -7,6 +7,8 @@ description: Preview certified true copy (CTC) billing from demo scans, or run t
 
 ## Choose the entry point
 
+For an attached batch with an ordinary request such as “run CTC billing”, inspect the attachment first using preview step 1. Decide from that evidence whether it is a mock batch or an operational job. Reuse the inspection in either path. An explicitly requested demo takes priority even if a task ID is supplied.
+
 - **Demo, mock, rehearsal, estimate or scan review:** show a read-only billing preview. A batch or company record marked MOCK / TEST also selects this path unless the worker expressly requests a particular recording action. Carry a supplied task ID as context during a preview.
 - **Operational work:** for a real billing run, a selected live task, or a request to record, submit or hand off work, use [the live workflow](references/live-workflow.md). Script and configuration paths in that guide are relative to this skill's root. For mock inputs, write only to a destination explicitly designated for the demo. A general request to demonstrate the workflow authorizes a preview.
 - **Other dashboard actions:** load [dashboard actions](references/dashboard-actions.md) only when the worker asks for a dashboard operation.
