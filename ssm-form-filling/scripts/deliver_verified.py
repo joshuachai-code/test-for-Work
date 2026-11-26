@@ -71,7 +71,7 @@ def save_copy(target,data,digest):
     if hashlib.sha256(target.read_bytes()).hexdigest()!=digest:raise ValueError('Saved copy hash mismatch')
     return 'saved_verified'
 
-def deliver(file,manifest,company,filename,config):
+def deliver(file,manifest,company,filename,config,task_id=None):
     data=Path(file).read_bytes()
     if not data:raise ValueError('Output file is empty')
     digest=hashlib.sha256(data).hexdigest()
@@ -83,7 +83,8 @@ def deliver(file,manifest,company,filename,config):
         raise ValueError('Local and OneDrive output roots must be separate')
     outputs=[]
     for label,root in zip(('local','onedrive'),roots):
-        target=root/company/filename
+        key = component(task_id) if label=='onedrive' and task_id else company
+        target=root/key/filename
         try:
             if not target.resolve().is_relative_to(root):raise ValueError('Destination escapes configured output root')
             status=save_copy(target,data,digest)
@@ -95,10 +96,11 @@ def deliver(file,manifest,company,filename,config):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('file','manifest','company','filename'):p.add_argument('--'+name,required=True)
+    p.add_argument('--task-id',help='Exact Cosec Desk assignment ID for the shared review folder')
     p.add_argument('--config',default=str(Path(__file__).resolve().parents[1]/'config.json'))
     a=p.parse_args()
     try:
-        result=deliver(a.file,json.loads(Path(a.manifest).read_text()),a.company,a.filename,json.loads(Path(a.config).read_text()))
+        result=deliver(a.file,json.loads(Path(a.manifest).read_text()),a.company,a.filename,json.loads(Path(a.config).read_text()),a.task_id)
         print(json.dumps(result,indent=2));return 0 if result['complete'] else 2
     except (ValueError,OSError,KeyError,TypeError) as e:
         print(json.dumps({'complete':False,'error':str(e)}));return 1

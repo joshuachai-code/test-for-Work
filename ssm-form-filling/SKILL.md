@@ -17,7 +17,7 @@ Read `config.json` for this installation's source and output locations:
 - OneDrive outputs: `/Users/joshua.c/Library/CloudStorage/OneDrive-Personal/Boardroom/Completed Forms`
 - Local outputs: `/Users/joshua.c/Documents/ChatGPT/Boardroom/Completed Forms`
 
-Use a company-specific subfolder under each output root, identified by confirmed company ID or a safe company-name slug. The local root is deliberately outside OneDrive. If installed elsewhere, confirm these locations and update configuration. Never silently substitute an unavailable source folder or save only one copy while claiming both succeeded.
+For a Cosec Desk assignment use the exact task ID under the OneDrive root. Retain the company subfolder for the local copy and standalone form delivery. The local root is deliberately outside OneDrive. If installed elsewhere, confirm these locations and update configuration. Never silently substitute an unavailable source folder or save only one copy while claiming both succeeded.
 
 ## 1. Receive the form and identify the company
 
@@ -101,7 +101,7 @@ Record the checked output SHA-256, source references, per-field check outcomes, 
 
 Use a unique filename such as `<company>_<form-id>_<as-of-date>_<run-id>_VERIFIED.pdf`, or `READY-FOR-SIGNATURE` when human execution is outstanding. Use the actual output extension. Do not overwrite the source or an unrelated prior output.
 
-After completing verification, run `python3 scripts/deliver_verified.py --file <verified-working-file> --manifest <manifest.json> --company <safe-company-key> --filename <filename>` from this skill directory, using the available Python runtime. The helper checks the manifest's output hash and field comparisons, saves matching bytes to both configured roots, and verifies their SHA-256 hashes. It never fills a form or independently establishes the truth of source facts.
+For an assigned task show the verified output and ask “Is this complete and ready to save and submit to your Team Leader?” Wait for confirmation. Use the exact task ID to save the shared file. After completing verification, run `python3 scripts/deliver_verified.py --file <verified-working-file> --manifest <manifest.json> --company <safe-company-key> --filename <filename> --task-id <assigned-task-id>` (omit --task-id only for standalone delivery) from this skill directory, using the available Python runtime. The helper checks the manifest's output hash and field comparisons, saves matching bytes to both configured roots, and verifies their SHA-256 hashes. It never fills a form or independently establishes the truth of source facts.
 
 If one destination fails, preserve the successful copy, report the partial save and missing destination, and retry only after access is resolved. Identical existing copies are safe to reuse; different existing content must not be overwritten. Do not claim both copies exist until both read-back hashes match the checked working file.
 
@@ -126,3 +126,5 @@ For an incomplete draft, failed verification or partial file delivery, do not su
 ## 8. Report the files and dashboard result separately
 
 Return links to the final files, the verification outcome and outstanding signature/attestation actions. State one database outcome explicitly: **saved and checked** (company, task ID and status), **pending** (write unavailable or result uncertain), or **not submitted** (preparation/delivery incomplete). Link to `https://cosec-desk.vercel.app` when saved; do not invent a task-specific URL. Distinguish file preparation, dashboard task submission and SSM lodgement in the result.
+
+For the assigned task’s completion note include the verified review path as `Review file: Completed Forms/<task_id>/<filename>` and, when available, a separate `Review link: <private OneDrive URL>` line. Include a line `Work units v1: N` with the actual number of completed forms. Obtain only missing work quantities. A Team Leader opens the saved deliverable before deciding whether to verify or return the task. Staff prompts, output summaries and task notes contain no service prices or printing charges. Director billing applies the configured task type’s rate after verification.

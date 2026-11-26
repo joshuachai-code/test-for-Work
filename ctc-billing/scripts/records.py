@@ -73,63 +73,60 @@ def record_excel(p, *, insert_missing=False):
         return {'saved':True,'books_verified':2,'job_id':p['job_id'],'run_id':p['run_id'],'cloud_sync':'unverified'}
     finally:Path(filename).unlink(missing_ok=True)
 
-def record_confirmed(p):
-    """Insert the user-priced billing run once; preserve existing verified rows."""
-    from excel_source import cents, load_source, paths, read_book
-
-    validate(p)
-    if not p.get('company_id') or not p.get('company_name'):
-        raise ValueError('The company name and ID are required before saving.')
-    if p.get('billing_unit') != 'page' or type(p.get('quantity')) is not int or p['quantity'] < 0:
-        raise ValueError('A verified number of certified pages is required.')
-    if any(p.get(field) in (None, '') for field in ('rate_rm', 'printing_rm')):
-        raise ValueError('Ask for the CTC rate per page and total printing charge before saving.')
-    total = p['quantity'] * cents(p['rate_rm']) + cents(p['printing_rm'])
-    if 'charge_sen' in p and p['charge_sen'] != total:
-        raise ValueError('The agreed total differs from CTC plus printing.')
-    p['charge_sen'] = total
-    key = (p['job_id'], p['run_id'])
+def record_work(job):
+    from excel_source import paths, read_book, load_source
+    from review_file import deliver
+    allowed = {'task_id','job_id','run_id','company_name','company_id','created_date','due_date',
+               'completed_date','pages','copies','printed','file'}
+    if set(job) - allowed:
+        raise ValueError('Only work identifiers, dates, counts and the completed file belong in this receipt.')
+    for field in ('pages','copies','printed'):
+        value = job.get(field)
+        if field == 'printed' and value is None:
+            continue
+        if type(value) is not int or not (int(field != 'printed') <= value <= 9999):
+            raise ValueError('Invalid count: ' + field)
+    for field in ('task_id','job_id','run_id','company_name','company_id','file'):
+        if not isinstance(job.get(field),str) or not job[field].strip():
+            raise ValueError('Missing ' + field)
+    for field in ('created_date','completed_date'):
+        date.fromisoformat(job[field])
+    if job.get('due_date'): date.fromisoformat(job['due_date'])
+    file = deliver(job['file'],job['task_id'])
+    printed = job.get('printed')
+    counts = f"CTC counts v1: pages={job['pages']} copies={job['copies']} printed={printed if printed is not None else 'unknown'}"
+    evidence = f"{counts}\nReview file: {file['review_file']}\nSHA256: {file['sha256']}"
+    entry = {k:job[k] for k in ('job_id','run_id','company_name','company_id','created_date','completed_date')}
+    entry.update(subcategory='CTC', due_date=job.get('due_date'), general_agent='GWork', cosec_agent='GWork',
+                 work_status='completed', workflow_stage='review', billing_status='pending',
+                 quantity=job['pages']*job['copies'], billing_unit='page', quantity_evidence=evidence,
+                 general_work=counts, cosec_work=counts, scan_reference=file['review_file'])
+    key = (job['job_id'],job['run_id'])
     books = paths()
-
-    def read_existing():
-        found = {}
-        for kind, path in books.items():
-            row = read_book(path, kind).get(key)
-            if row is None:
-                continue
-            if row['company_id'] != p.get('company_id') or row['company_name'] != p.get('company_name'):
-                raise ValueError(f'{kind}: job/run already belongs to another company.')
-            if kind == 'cosec' and (
-                    row['quantity'] != p['quantity'] or row['billing_unit'] != 'page'
-                    or cents(row['rate_rm']) != cents(p['rate_rm'])
-                    or cents(row['printing_rm']) != cents(p['printing_rm'])
-                    or cents(row['charge_rm']) != total):
-                raise ValueError('Cosec row has different saved billing details. Review before changing it.')
-            found[kind] = row
-        return found
-
-    previous = read_existing()
-    if len(previous) < len(books):
-        for kind, row in previous.items():
-            field = kind + '_agent'
-            p[field] = row[field]
-        p['updated_at'] = (next(iter(previous.values()))['updated_at'] if previous
-                           else datetime.now(timezone.utc).isoformat())
-        record_excel(p, insert_missing=True)
+    def existing():
+        rows = {}
+        for kind,path in books.items():
+            row = read_book(path,kind).get(key)
+            if row is None: continue
+            fields = ['company_id','company_name','completed_date','scan_reference','general_work'] if kind=='general' else ['company_id','company_name','quantity','quantity_evidence','cosec_work']
+            if any(row[f] != entry[f] for f in fields) or (kind=='cosec' and any(row[f] != '' for f in ('rate_rm','printing_rm','charge_rm','billed_rm'))):
+                raise ValueError(f'{kind}: existing run has different data. Check its receipt before retrying.')
+            rows[kind] = row
+        return rows
+    prior = existing()
+    if len(prior) != 2:
+        entry['updated_at'] = next(iter(prior.values()))['updated_at'] if prior else datetime.now(timezone.utc).isoformat()
+        record_excel(entry, insert_missing=True)
     load_source()
-    verified = read_existing()
-    if set(verified) != set(books):
-        raise ValueError('Both record-book rows could not be verified.')
-    return {'saved': True, 'verified_books': [path.name for path in books.values()],
-            'job_id': key[0], 'run_id': key[1], 'charge_sen': total, 'cloud_sync': 'unverified'}
+    if len(existing()) != 2: raise ValueError('Could not verify both books.')
+    return {**file,'task_id':job['task_id'],'run_id':job['run_id'],'job_id':job['job_id'],
+            'quantity':entry['quantity'],'verified_books':[p.name for p in books.values()],'completion_note':evidence}
 
 
 if __name__=='__main__':
     try:
-        actions = {'record': record_excel, 'record-confirmed': record_confirmed, 'stage': record}
-        if len(sys.argv)!=3 or sys.argv[1] not in actions:
-            raise ValueError('Usage: records.py {record|record-confirmed|stage} job.json')
-        payload=json.loads(Path(sys.argv[2]).read_text())
-        print(json.dumps(actions[sys.argv[1]](payload)))
+        if len(sys.argv)!=3 or sys.argv[1] != 'record-work':
+            raise ValueError('Usage: records.py record-work job.json')
+        print(json.dumps(record_work(json.loads(Path(sys.argv[2]).read_text()))))
     except (ValueError,KeyError,OSError) as e:
         print(str(e),file=sys.stderr);sys.exit(1)
