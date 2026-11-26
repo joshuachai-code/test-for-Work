@@ -124,11 +124,17 @@ def record_confirmed(p):
             'job_id': key[0], 'run_id': key[1], 'charge_sen': total, 'cloud_sync': 'unverified'}
 
 
+def record_gwork(payload):
+    """Record a priced job for which G-Work prepared both book entries."""
+    return record_confirmed(dict(payload, general_agent='GWork', cosec_agent='GWork'))
+
+
 if __name__=='__main__':
     try:
-        actions = {'record': record_excel, 'record-confirmed': record_confirmed, 'stage': record}
+        actions = {'record': record_excel, 'record-confirmed': record_confirmed,
+                   'record-gwork': record_gwork, 'stage': record}
         if len(sys.argv)!=3 or sys.argv[1] not in actions:
-            raise ValueError('Usage: records.py {record|record-confirmed|stage} job.json')
+            raise ValueError('Usage: records.py {record|record-confirmed|record-gwork|stage} job.json')
         payload=json.loads(Path(sys.argv[2]).read_text())
         print(json.dumps(actions[sys.argv[1]](payload)))
     except (ValueError,KeyError,OSError) as e:
