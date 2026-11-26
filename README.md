@@ -20,7 +20,13 @@ Task submission does not perform SSM lodgement, approve work, issue invoices, up
 
 ## CTC billing
 
-Download [ctc-billing.skill](ctc-billing.skill) for the packaged workflow, or inspect [the skill source](ctc-billing/SKILL.md).
+In G-Work, import the [CTC skill folder](ctc-billing/) or upload [ctc-billing.skill](ctc-billing.skill). Re-import after updating an existing installation.
+
+For a demo, attach the combined scan or the individual PDFs from one batch. For example:
+
+> Preview CTC billing for the attached Cedar Logistics scans. For this demo use RM5 per certified page, with no printing charge. Show the page count, exclusions and estimated fee.
+
+The preview works from the attachment. Original Cedar Logistics and Amber Energy demo PDFs can be verified by file hash in one helper call using Python 3. Other PDFs can be rendered for inspection with the desktop runtime; page images also work directly. The RM5 rate in the prompt applies only to that demonstration. Omit the rate to demonstrate pricing pending. Use the [operational workflow](ctc-billing/references/live-workflow.md) when recording actual work.
 
 The skill covers company lookup from locally synced OneDrive, scanned-copy quantity review, recording work in both Excel books, approval, and Finance handoff. Once preparation and both book writes are verified, it records the preparation task in production Cosec Desk. The separate [local executive dashboard](dashboard/README.md) reads the two record books and exposes aggregate reporting.
 

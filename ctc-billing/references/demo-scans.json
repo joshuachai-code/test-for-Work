@@ -1,0 +1,94 @@
+{
+  "cases": {
+    "MOCK-CO-008": {
+      "company": "CEDAR LOGISTICS SDN. BHD.",
+      "pages": {
+        "route": "CL-RT-026 | Document routing sheet. No certification mark. Scan operator records that the share capital statement CL-SC-009 was exported twice from one certified physical sheet.",
+        "resolution": "CL-BR-026 | Board resolution, 1 of 1. Visible CERTIFIED TRUE COPY mock mark.",
+        "member1": "CL-RM-009 | Register of members, 1 of 2. Visible CERTIFIED TRUE COPY mock mark.",
+        "member2": "CL-RM-009 | Register of members, 2 of 2. Visible CERTIFIED TRUE COPY mock mark.",
+        "capital": "CL-SC-009 | Share capital statement, 1 of 1. Visible CERTIFIED TRUE COPY mock mark."
+      }
+    },
+    "MOCK-CO-001": {
+      "company": "AMBER ENERGY SDN. BHD.",
+      "pages": {
+        "route": "ROUTE-1126-01 | Document routing sheet. No certification mark.",
+        "resolution": "BR-2026-017 | Written board resolution, 1 of 1. Visible CERTIFIED TRUE COPY mock mark.",
+        "director1": "RD-2026-004 | Register of directors, 1 of 2. Visible CERTIFIED TRUE COPY mock mark.",
+        "director2": "RD-2026-004 | Register of directors, 2 of 2. Visible CERTIFIED TRUE COPY mock mark.",
+        "minutes1": "BM-2026-011 | Minutes of a board meeting, 1 of 3. Visible CERTIFIED TRUE COPY mock mark.",
+        "minutes2": "BM-2026-011 | Minutes of a board meeting, 2 of 3. Visible CERTIFIED TRUE COPY mock mark.",
+        "minutes3": "BM-2026-011 | Minutes of a board meeting, 3 of 3. Visible CERTIFIED TRUE COPY mock mark."
+      }
+    }
+  },
+  "files": {
+    "40606c6a12220a2371fc1a210563476432e62b712252b5f444c407f826df91b6": {
+      "case": "MOCK-CO-008",
+      "pages": [
+        "route",
+        "resolution",
+        "member1",
+        "member2",
+        "capital",
+        "capital"
+      ]
+    },
+    "21a97b4905814f52bdec3f32e8dc126f5960b93790fe17798e0929ca7c7aab74": {
+      "case": "MOCK-CO-008",
+      "pages": [
+        "route",
+        "resolution"
+      ]
+    },
+    "4820e2aec364704f975d5526da59314e404e0c5bd13995457e5a5a3d6031462e": {
+      "case": "MOCK-CO-008",
+      "pages": [
+        "member1",
+        "member2"
+      ]
+    },
+    "5484dbe871f3126c5a0c78a62fdb54be52076a2886f0a8ebb0ad33b8e83a0d4f": {
+      "case": "MOCK-CO-008",
+      "pages": [
+        "capital",
+        "capital"
+      ]
+    },
+    "d9cee71649cdd8645c0d2e83792d0e5ab2f01ba3ae61ae5858d6682c09ba4f02": {
+      "case": "MOCK-CO-001",
+      "pages": [
+        "route",
+        "resolution",
+        "director1",
+        "director2",
+        "minutes1",
+        "minutes2",
+        "minutes3"
+      ]
+    },
+    "17ccfc0ca01ac166b101b65e07e71e805ef09e15575bfb482843fd8324865067": {
+      "case": "MOCK-CO-001",
+      "pages": [
+        "route",
+        "resolution"
+      ]
+    },
+    "085e0a26c5c0828ebbae1374c12bc04461460e3468e49a672410e80dfbb59628": {
+      "case": "MOCK-CO-001",
+      "pages": [
+        "director1",
+        "director2"
+      ]
+    },
+    "2deba661f574aa4713e015e79c0bb068ee119b86129e6ce315456649d6628bc4": {
+      "case": "MOCK-CO-001",
+      "pages": [
+        "minutes1",
+        "minutes2",
+        "minutes3"
+      ]
+    }
+  }
+}
