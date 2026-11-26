@@ -22,7 +22,7 @@ Task submission does not perform SSM lodgement, approve work, issue invoices, up
 
 In G-Work, import the [CTC skill folder](ctc-billing/) or upload [ctc-billing.skill](ctc-billing.skill). Re-import after updating an existing installation.
 
-Attach the CTC batch and say **Run CTC billing for this company.** G-Work reports the page count, then asks for the CTC rate per certified page and total printing cost. After you supply both, it records the same job in the general and cosec OneDrive books and verifies both entries. An explicit **preview only** runs without writing. Current-job rates come from the worker.
+Attach the CTC batch and say **Run CTC billing for this company.** G-Work confirms certified pages per copy and completed copies. After completion confirmation it saves the deliverable in Boardroom/Completed Forms/<task_id>/, records nonfinancial counts in both CTC books and submits the same task for review. The Director configures billing rates in Cosec Desk. An explicit preview is read-only.
 
 Cedar Logistics, Amber Energy, Rimbun Quay Packaging and Saujana Loom Textiles have reviewed scan evidence for the listed exact file hashes. Other files can be rendered for inspection. See [CTC billing](ctc-billing/SKILL.md) for the short run and [the operational workflow](ctc-billing/references/live-workflow.md) for dashboard-linked work.
 
