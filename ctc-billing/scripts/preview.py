@@ -29,17 +29,17 @@ def normalise(name):
     return "".join(ch for ch in name.casefold() if ch.isalnum())
 
 
-def mock_profile(name, company_id):
-    """Use only a single matching mock-company directory in the configured root."""
+def company_profile(name, company_id, collection):
+    """Read identity from one matching directory. Pricing belongs to the job."""
     config = read_json(SCRIPTS / "books.json")
-    parent = Path(config["root"]) / config["company_folder"] / "Mock Companies"
+    parent = Path(config["root"]) / config["company_folder"] / collection
     try:
         matches = [p for p in parent.iterdir() if p.is_dir() and normalise(p.name) == normalise(name)]
         if len(matches) == 1:
             record = read_json(matches[0] / "company-info.json")
-            if (record.get("is_mock") is True and record.get("company_id") == company_id
+            if (record.get("company_id") == company_id
                     and normalise(record.get("legal_name", "")) == normalise(name)):
-                return {"status": "matched", "ctc_billing": record.get("ctc_billing", {})}
+                return {"status": "matched"}
     except (OSError, ValueError):
         pass
     return {"status": "profile unavailable or not matched"}
@@ -112,7 +112,7 @@ def preview(paths, fresh):
         files.append((path, known))
     needs_renderer = any(not known and p.suffix.lower() == ".pdf" for p, known in files)
     has_renderer = ensure_renderer() if needs_renderer else False
-    output = {"pricing_defaults": read_json(SCRIPTS / "pricing.json"), "companies": {}, "files": []}
+    output = {"companies": {}, "files": []}
     seen_images = {}
     for path, known in files:
         if known:
@@ -120,8 +120,9 @@ def preview(paths, fresh):
             case = catalog["cases"][company_id]
             if company_id not in output["companies"]:
                 output["companies"][company_id] = {
-                    "scan_company": case["company"], **mock_profile(case["company"], company_id)}
+                    "scan_company": case["company"], **company_profile(case["company"], company_id, case.get("collection", "Mock Companies"))}
             result = {"method": "matched demo evidence (exact file SHA-256)", "company_id": company_id,
+                      "visual_review": "Verified previously; no page re-upload needed",
                       "pages": [{"page": n, "reviewed_image": f"{company_id}/{key}",
                                  "evidence": case["pages"][key]} for n, key in enumerate(known["pages"], 1)]}
         elif path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff"}:
