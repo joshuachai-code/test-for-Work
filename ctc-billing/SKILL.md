@@ -33,10 +33,12 @@ Calculate CTC subtotal = certified pages × CTC rate per page. Add the total pri
 
 For a billing run, the worker's pricing reply continues the existing authorisation to save. Keep the same job and run IDs and avoid another approval question. Use the printed copy request as the job ID if no earlier assignment ID exists. If starting its first identified run, use that job ID with the suffix `-01` as the run ID. Reuse an existing key on retry; preserve reviewed or issued records. Keep known task IDs separate.
 
-Prepare the job JSON with the fields listed under **Write both Excel books** in [the live workflow](references/live-workflow.md). Include company, work date, separate agent attribution, verified quantity and evidence, billing unit `page`, both user-confirmed costs (`rate_rm` and total `printing_rm`), and the unbilled total in integer sen. Use `billing_status: pending` until subsequent billing action is established. Record and verify the two rows with the installed helper:
+Prepare the job JSON with the fields listed under **Write both Excel books** in [the live workflow](references/live-workflow.md). Include company, work date, verified quantity and evidence, billing unit `page`, both user-confirmed costs (`rate_rm` and total `printing_rm`), and the unbilled total in integer sen. Use `billing_status: pending` until subsequent billing action is established.
+
+When G-Work prepares both entries, use the command below. It writes `GWork` in **Work done by agent** in each book. Describe any evidenced printing, stamping or delivery separately in the work description. An unknown physical operator does not change the record preparer. If different agents actually prepared the entries, use `record-confirmed` with each preparer's own identifier.
 
 ```sh
-python3 scripts/records.py record-confirmed "/path/to/this-job.json"
+python3 scripts/records.py record-gwork "/path/to/this-job.json"
 ```
 
 Report each workbook and the job reference only after both saved rows have been read back. Distinguish successful local saves in the OneDrive folder from cloud sync. If the write fails, report which books were verified, the actual failure and any outstanding action. Never report a preview, a staged file or a dashboard entry as a workbook save. During the short demo path skip memory, task listing, browser setup, tool searches, SQL and dashboard operations.
