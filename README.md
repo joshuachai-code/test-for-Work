@@ -22,11 +22,9 @@ Task submission does not perform SSM lodgement, approve work, issue invoices, up
 
 In G-Work, import the [CTC skill folder](ctc-billing/) or upload [ctc-billing.skill](ctc-billing.skill). Re-import after updating an existing installation.
 
-For a demo, attach the combined scan or the individual PDFs from one batch. For example:
+Attach the CTC batch and say **Run CTC billing for this company.** G-Work reports the page count, then asks for the CTC rate per certified page and total printing cost. After you supply both, it records the same job in the general and cosec OneDrive books and verifies both entries. An explicit **preview only** runs without writing. Current-job rates come from the worker.
 
-> Preview CTC billing for the attached Cedar Logistics scans. For this demo use RM5 per certified page, with no printing charge. Show the page count, exclusions and estimated fee.
-
-The preview works from the attachment. Original Cedar Logistics and Amber Energy demo PDFs can be verified by file hash in one helper call using Python 3. Other PDFs can be rendered for inspection with the desktop runtime; page images also work directly. The RM5 rate in the prompt applies only to that demonstration. Omit the rate to demonstrate pricing pending. Use the [operational workflow](ctc-billing/references/live-workflow.md) when recording actual work.
+Cedar Logistics, Amber Energy, Rimbun Quay Packaging and Saujana Loom Textiles have reviewed scan evidence for the listed exact file hashes. Other files can be rendered for inspection. See [CTC billing](ctc-billing/SKILL.md) for the short run and [the operational workflow](ctc-billing/references/live-workflow.md) for dashboard-linked work.
 
 The skill covers company lookup from locally synced OneDrive, scanned-copy quantity review, recording work in both Excel books, approval, and Finance handoff. Once preparation and both book writes are verified, it records the preparation task in production Cosec Desk. The separate [local executive dashboard](dashboard/README.md) reads the two record books and exposes aggregate reporting.
 

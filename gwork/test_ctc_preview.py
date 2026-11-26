@@ -34,7 +34,7 @@ class DemoPreviewTests(unittest.TestCase):
             source.write_bytes(contents)
             reference = root / "catalog.json"
             reference.write_text(json.dumps(catalog))
-            with patch.object(preview, "CATALOG", reference), patch.object(preview, "mock_profile", return_value={}), \
+            with patch.object(preview, "CATALOG", reference), patch.object(preview, "company_profile", return_value={}), \
                     patch.object(preview, "ensure_renderer", return_value=False) as renderer:
                 matched = preview.preview([source], False)["files"][0]["pages"]
                 self.assertEqual([p["reviewed_image"] for p in matched], ["T/p", "T/p"])

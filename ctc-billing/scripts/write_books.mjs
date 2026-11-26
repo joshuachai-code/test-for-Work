@@ -1,14 +1,24 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import {FileBlob,SpreadsheetFile} from '@oai/artifact-tool';
+import {createRequire} from 'node:module';
+import {pathToFileURL} from 'node:url';
+const require = createRequire(import.meta.url);
+const runtimeRoot = path.dirname(path.dirname(process.execPath));
+const artifactTool = require.resolve('@oai/artifact-tool', {paths: [import.meta.dirname, runtimeRoot]});
+const {FileBlob,SpreadsheetFile} = await import(pathToFileURL(artifactTool).href);
+const insertMissing = process.argv[3] === '--insert-missing';
 const spec=JSON.parse(await fs.readFile(new URL('./books.json',import.meta.url),'utf8'));
 const p=JSON.parse(await fs.readFile(process.argv[2],'utf8'));
 for(const k of ['company_name','general_agent','cosec_agent'])if(!p[k])throw Error('Missing '+k);
 const dir=path.join(process.env.BOARDROOM_DATA_ROOT||spec.root,spec.books_folder);
 const lock=path.join(dir,'.ctc-write.lock');
 let handle;
-try{handle=await fs.open(lock,'wx')}catch{throw Error('CTC writer is busy or a prior write needs review. Check .ctc-write.lock before retrying.')}
+try { handle = await fs.open(lock, 'wx'); }
+catch (error) {
+ if (error.code !== 'EEXIST') throw error;
+ throw Error('CTC writer is busy or a prior write needs review. Check .ctc-write.lock before retrying.');
+}
 const staged=[],saved=[];
 const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
 try{
@@ -28,6 +38,11 @@ try{
   });
   const hits=[];for(let r=5;r<values.length;r++)if(values[r]?.[0]===p.job_id&&values[r]?.[1]===p.run_id)hits.push(r);
   if(hits.length>1)throw Error('Duplicate job/run in '+kind);
+  if (insertMissing && hits.length) {
+   const stampColumn = def.columns.findIndex(([,key]) => key === 'updated_at');
+   if (values[hits[0]][stampColumn] !== p.updated_at) throw Error('Record changed; recheck before retrying.');
+   continue;
+  }
   if(hits.length)sh.getRangeByIndexes(hits[0],0,1,n).values=[row];
   else if(!values[5]?.[0])sh.getRangeByIndexes(5,0,1,n).values=[row];
   else sh.tables.items[0].rows.add(null,[row]);
