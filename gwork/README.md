@@ -4,6 +4,37 @@ Import [cosec-desk-actions](../cosec-desk-actions/) for the full dashboard actio
 
 For a live demo, refresh the four imports from the same revision. A member or leader can ask “Any updates on my tasks for Fast AI Sdn Bhd?” from any of them. The known-company status path uses one scoped ticket and one dashboard read. To apply the faster daily briefing to a reminder that already exists, rerun the morning-brief installer in its owner’s G-Work session with the same verified staff ID and scheduled time. It updates that reminder in place.
 
+## Connect Cosec Desk as an MCP server
+
+The local server exposes each operation in the live dashboard catalog as a typed `cosec_*` tool. It handles identity checks, action tickets and fresh reads inside the tool call. Routine task creation, reassignment, starting, guidance and company assignment can resolve supplied names or codes and fetch the current revision internally. Actions that depend on a previously reviewed state still require its revision. Never fill a missing review, human decision or quantity from a default.
+
+1. Check out this revision on the employee's computer. Install Python 3.9+ and the PostgreSQL `psql` client. Make sure the G-Work subprocess can find `psql` on its PATH.
+2. Configure a private PostgreSQL service for this employee's **existing restricted Neon login**, with the provisioned database, host, port, `sslmode=verify-full` and a trusted CA root. Supply the password through libpq's private password file. Test that service with `psql` as the employee. A Hi/Hi2 connection managed entirely by G-Work does not automatically provide libpq credentials. Leave the existing connection in use until this employee's service is provisioned.
+3. In [G-Work Tool Management](https://www.gptbots.ai/docs/workspace/app-settings/tools), add a **local stdio MCP**. Substitute the absolute interpreter and checkout paths and the verified identity for this employee. Enable it on that employee's account. The environment below is an example for Daniel.
+
+```json
+{
+  "mcpServers": {
+    "cosec-desk": {
+      "command": "/absolute/path/to/python3",
+      "args": ["/absolute/path/to/test-for-Work/cosec-desk-actions/scripts/desk_mcp.py"],
+      "env": {
+        "PGSERVICE": "cosec-daniel",
+        "COSEC_DB_ROLE": "gwork_daniel",
+        "COSEC_EMPLOYEE_ID": "leader-demo",
+        "PATH": "/absolute/directory/containing/psql:/usr/bin:/bin"
+      }
+    }
+  }
+}
+```
+
+4. Refresh the cosec-desk-actions folder or its standalone archive from this revision for dashboard commands. Specialist packages continue to handle document work. Confirm the tools list, then run the read-only prompt “Show my tasks for FASB”. Check the returned rows under that employee. Task, billing, staff and handover permissions continue to come from Cosec Desk. If enabling tools for a saved schedule, check the schedule's own tool selection and existing reporting instructions.
+
+For changes that time out, use the original UUID and inputs to reconcile. The local journal retains the resolved company, assignee, service and revision for those routine actions so it can retry after a restart. Keep the journal on that employee's computer. A completed replay can have a minimal receipt. Report only the fields supplied by a fresh permitted read. A 409 requires reviewing the changed state before issuing a new request ID.
+
+Measure from Send to the final answer, with the tool's `connector_ms` recorded separately. Benchmark each operation in a disposable test workspace with the appropriate actor, both on a fresh session and a repeated one. The connector carries a 22-second I/O budget to leave time for the model. A timeout, a clarification, or a queued document job does not establish successful completion within 30 seconds.
+
 # Morning task list in G-Work
 
 Import the [morning-brief skill folder](../morning-brief/) from GitHub, or upload [morning-brief.skill](../morning-brief.skill). Both include the required `SKILL.md` and the scheduling resources. The standalone [morning-brief.md](../morning-brief.md) is a readable reference, not the import package.
