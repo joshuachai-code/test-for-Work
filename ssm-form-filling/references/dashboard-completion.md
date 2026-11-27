@@ -11,7 +11,29 @@ Use these installed functions:
 - `public.cosec_gwork_record_completion(jsonb)` — creates or submits the linked worker's own preparation task, with current company and section checks, an audit record and duplicate protection.
 - `public.gwork_task_details` — reads current permitted tasks, including `task_id`, deadline, status, task type and workflow. `public.gwork_tasks` remains available for older clients. Both are read-only views.
 
-Before saving, run:
+### Known assignment
+
+When the worker selects a known company and task, one scoped read checks identity, transaction mode and the selected assignment together. Use it for the current preflight or fresh read-back; select the evidence fields required for the stage. Bind the configured login, expected linked staff ID, company code and exact task ID respectively. For a SQL-string-only tool use a safely encoded UTF-8 hex literal per value as described below. Never interpolate user text.
+
+```sql
+WITH linked AS (
+  SELECT i.*, count(*) OVER () AS links FROM public.cosec_gwork_identity() AS i
+)
+SELECT i.employee_id, i.staff_role, current_setting('transaction_read_only') AS read_only,
+       t.company_code, t.company_name, t.task_id, t.title, t.status, t.assigned_staff_id,
+       t.due_date, t.workflow, t.service_id, t.document_id, t.milestone_key,
+       t.completed_date, t.completion_note
+FROM linked AS i LEFT JOIN public.gwork_task_details AS t
+  ON t.company_code = $3 AND t.task_id = $4 AND t.assigned_staff_id = i.employee_id
+WHERE i.links = 1 AND i.tasks_enabled AND i.database_role = current_user
+  AND i.database_role = $1 AND i.employee_id = $2;
+```
+
+Require the expected staff role and one matching assignment. Zero rows means identity or Tasks access failed; a null task ID means the assignment is unavailable to this worker. Neither permits a write. When the legal identity/code is already established against the company record, skip repeating the directory search. Keep a fresh read after each write and after a user handoff before a new write. Do not reuse an old status across a confirmation pause. A narrow mutation still rechecks permission on the server.
+
+### Standalone work or unknown assignment
+
+When company or task matching is still needed, first run:
 
 ```sql
 SELECT * FROM public.cosec_gwork_identity();
@@ -24,7 +46,7 @@ The Neon connection must permit read/write transactions for the save function. I
 
 ## Match the company and task
 
-Read permitted company rows and match the legal name, confirmed company code and registration number. A group ID alone is insufficient. Read `public.gwork_task_details` for that company. A task selected from the morning briefing must retain that exact `task_id`; never replace it with a new task. A conversation ID, workflow run ID, Excel job ID or title is not a dashboard task ID. Resolve multiple candidate tasks rather than choosing an unrelated one. Preserve the existing deadline, assignee and task type.
+For an unresolved company, read permitted company rows and match the legal name, confirmed company code and registration number. A group ID alone is insufficient. Read `public.gwork_task_details` for that company. A task selected from the morning briefing must retain that exact `task_id`; never replace it with a new task. A conversation ID, workflow run ID, Excel job ID or title is not a dashboard task ID. Resolve multiple candidate tasks rather than choosing an unrelated one. Preserve the existing deadline, assignee and task type.
 
 Use a preparation task owned by the authenticated worker. This action cannot submit another employee's task, complete a linked document or statutory milestone, approve work, issue an invoice or modify rates. A directory-only Allow viewing rule is not permission to work for that company. If an existing task includes signing, lodgement or other unfinished obligations, use a separate preparation task when authorized. For tasks linked through `document_id` or a milestone, use the shared dashboard actions described in [dashboard-actions.md](dashboard-actions.md). They support starting/submitting the same task and authorized review. Submit only after the entire linked obligation is actually fulfilled; a prepared draft alone is not statutory lodgement or certification.
 

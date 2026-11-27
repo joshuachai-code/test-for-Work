@@ -2,6 +2,8 @@
 
 Import [cosec-desk-actions](../cosec-desk-actions/) for the full dashboard action menu. The current morning-brief, CTC and SSM packages also bundle the same client and instructions. Refresh an already installed package once; a GitHub update does not update its cached G-Work copy. Continue using the employee’s existing restricted Hi/Hi2 connection; no new OAuth sign-in is required. The live action menu is https://cosec-desk.vercel.app/api/gwork and uses the dashboard’s actual handlers and current permissions.
 
+For a live demo, refresh the four imports from the same revision. A member or leader can ask “Any updates on my tasks for Fast AI Sdn Bhd?” from any of them. The known-company status path uses one scoped ticket and one dashboard read. To apply the faster daily briefing to a reminder that already exists, rerun the morning-brief installer in its owner’s G-Work session with the same verified staff ID and scheduled time. It updates that reminder in place.
+
 # Morning task list in G-Work
 
 Import the [morning-brief skill folder](../morning-brief/) from GitHub, or upload [morning-brief.skill](../morning-brief.skill). Both include the required `SKILL.md` and the scheduling resources. The standalone [morning-brief.md](../morning-brief.md) is a readable reference, not the import package.
