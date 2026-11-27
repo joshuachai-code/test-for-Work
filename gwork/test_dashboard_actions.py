@@ -25,6 +25,18 @@ class DashboardActionsTests(unittest.TestCase):
                 routes.append(route)
         self.assertEqual(len(set(routes)), 1)
 
+    def test_daniel_hi2_example_sets_the_pin_and_checks_the_link_in_one_call(self):
+        guide = (ROOT / 'cosec-desk-actions/SKILL.md').read_text()
+        section = guide.split('## Daniel’s pinned Hi2 connection\n', 1)[1].split('\n## ', 1)[0]
+        args = json.loads(section.split('```json\n', 1)[1].split('\n```', 1)[0])
+        self.assertEqual({k: args[k] for k in actions.CONTEXT}, actions.CONTEXT)
+        self.assertEqual(args['role_name'], 'gwork_daniel')
+        self.assertIn("('gwork_daniel', 'leader-demo', 'Team Leader')", args['sql'])
+        self.assertIn('count(*) = 1 AND bool_and(i.tasks_enabled AND i.database_role = current_user', args['sql'])
+        self.assertIn("'get_tasks', jsonb_build_object('company', 'FASB')", args['sql'])
+        self.assertIn('FROM public.cosec_gwork_identity()', args['sql'])
+        self.assertNotIn('role_name', actions.CONTEXT)
+
     def test_sql_contains_encoded_data_and_preserves_request_identity(self):
         request={'request_id':str(uuid.uuid4()),'operation':'create_task',
                  'arguments':{'company':'FASB','title':"x'); DROP TABLE app_users; -- 😀",'revision':3}}
