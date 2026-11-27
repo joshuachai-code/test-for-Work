@@ -1,3 +1,5 @@
+from contextlib import ExitStack
+from io import StringIO
 import json
 from pathlib import Path
 import sys
@@ -17,9 +19,9 @@ def ticket():
 
 class AssignmentTests(unittest.TestCase):
     def setUp(self):
-        self.user = {'id': 'live-leader-27', 'role': 'Team Leader', 'team_id': 'east',
+        self.user = {'id': 'live-leader-27', 'name': 'Current Caller', 'role': 'Team Leader', 'team_id': 'east',
                      'allowed_sections': ['tasks']}
-        self.people = [{'id': 'worker', 'name': 'Aisha Rahman', 'team_id': 'east'},
+        self.people = [{'id': 'worker', 'name': 'Aisha Rahman', 'role': 'Team Member', 'team_id': 'east'},
                        {'id': 'other', 'name': 'Aisha Noor', 'team_id': 'west'}]
         self.workspace = {'revision': 23, 'data': {'entities': [{'c': 'FA', 'name': 'Fast AI Sdn Bhd'}],
                          'progress': {'FA': {'teamId': 'east'}},
@@ -37,6 +39,47 @@ class AssignmentTests(unittest.TestCase):
         self.assertEqual([c.args[0]['request_id'] for c in fetch.call_args_list],
                          [self.row[k]['request_id'] for k in ('identity_ticket', 'workspace_ticket')])
         return saved
+
+    def eligibility_request(self):
+        return {**self.document, 'request': {'company': 'FA', 'assignee': 'Aisha'}}
+
+    def test_check_cli_returns_scoped_result_and_two_read_timings(self):
+        identity = {'user': self.user, 'people': self.people}
+        output = StringIO()
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(sys, 'argv', ['hi2_assignment.py', 'check']))
+            stack.enter_context(patch.object(sys, 'stdin', StringIO(json.dumps(self.eligibility_request()))))
+            stack.enter_context(patch.object(sys, 'stdout', output))
+            stack.enter_context(patch.object(flow, 'perf_counter_ns', side_effect=[0, 3_000_000, 4_000_000, 9_000_000]))
+            for forbidden in ('plan', 'write_call', 'finish'):
+                stack.enter_context(patch.object(flow, forbidden, side_effect=AssertionError(forbidden)))
+            reads = stack.enter_context(patch.object(flow, 'fetch', side_effect=[identity, self.workspace]))
+            flow.main()
+        self.assertEqual([call.args[0] for call in reads.call_args_list],
+                         [self.row['identity_ticket'], self.row['workspace_ticket']])
+        result = json.loads(output.getvalue())
+        self.assertTrue(result['eligible'])
+        self.assertEqual(result['caller']['id'], self.user['id'])
+        self.assertEqual(result['assignee']['id'], 'worker')
+        self.assertEqual(result['company'], {'code': 'FA', 'name': 'Fast AI Sdn Bhd'})
+        self.assertEqual(result['timings_ms'], {'identity_read': 3, 'workspace_read': 5})
+        self.assertNotIn('ticket', output.getvalue())
+        self.assertNotIn('Aisha Noor', output.getvalue())
+
+    def test_check_refuses_ambiguous_recipient_and_denied_workspace(self):
+        identity = {'user': self.user, 'people': self.people + [dict(self.people[0], id='another')]}
+        with patch.object(flow, 'fetch', side_effect=[identity, self.workspace]):
+            with self.assertRaisesRegex(flow.AssignmentError, 'No unique eligible assignee'):
+                flow.check(self.eligibility_request())
+        with patch.object(flow, 'fetch', side_effect=[identity, flow.AssignmentError('Workspace denied')]):
+            with self.assertRaisesRegex(flow.AssignmentError, 'Workspace denied'):
+                flow.check(self.eligibility_request())
+
+    def test_check_refuses_write_inputs_before_any_fetch(self):
+        with patch.object(flow, 'fetch') as fetch:
+            with self.assertRaisesRegex(flow.AssignmentError, 'only company and assignee'):
+                flow.check(self.document)
+        fetch.assert_not_called()
 
     def test_caller_request_recipient_write_readback(self):
         saved = self.plan()

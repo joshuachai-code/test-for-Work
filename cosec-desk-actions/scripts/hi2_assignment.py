@@ -1,10 +1,11 @@
-"""Create one task through the current employee's Hi2 connection and Cosec Desk."""
+"""Check assignment eligibility or create one task through the current employee's Hi2 connection."""
 import argparse
 from datetime import date
 import json
 import os
 from pathlib import Path
 import sys
+from time import perf_counter_ns
 import uuid
 
 import dashboard_action as api
@@ -69,26 +70,31 @@ def match(rows, text, keys, label, first_name=False):
     return hits[0]
 
 
-def resolve(request, user, people, workspace):
+def resolve_recipient(request, user, people, workspace):
     if user['role'] not in ('Team Leader', 'Director', 'Team Member'):
         raise AssignmentError("Unsupported assignment role.")
-    if set(request) - {'company', 'assignee', 'service', 'title', 'quantity', 'due_date'}:
-        raise AssignmentError("Unexpected request field. Use the standalone task assignment fields.")
     data = workspace['data']
-    company = match(data['entities'], request.get('company'), ('c', 'name', 'reg'), 'company')['c']
-    team = data['progress'][company].get('teamId')
+    company = match(data['entities'], request.get('company'), ('c', 'name', 'reg'), 'company')
+    team = data['progress'][company['c']].get('teamId')
     if not team or (user['role'] != 'Director' and user.get('team_id') != team):
         raise AssignmentError("This company is outside the caller's team.")
     eligible = [p for p in people if p.get('active', True) and p.get('team_id') == team]
     owner = match(eligible, request.get('assignee'), ('id', 'name'), 'assignee', first_name=True)
     if user['role'] == 'Team Member' and user['id'] != owner['id']:
         raise AssignmentError("Team Members can create tasks only for themselves.")
-    args = {'revision': workspace['revision'], 'company': company, 'ownerId': owner['id']}
+    return company, owner
+
+
+def resolve(request, user, people, workspace):
+    if set(request) - {'company', 'assignee', 'service', 'title', 'quantity', 'due_date'}:
+        raise AssignmentError("Unexpected request field. Use the standalone task assignment fields.")
+    company, owner = resolve_recipient(request, user, people, workspace)
+    args = {'revision': workspace['revision'], 'company': company['c'], 'ownerId': owner['id']}
     if request.get('service'):
         name = request['service']
         if isinstance(name, str) and name.strip().casefold() == 'ctc':
             name = 'Certified true copies'
-        args['serviceId'] = match(data.get('rates', []), name, ('id', 'name'), 'service')['id']
+        args['serviceId'] = match(workspace['data'].get('rates', []), name, ('id', 'name'), 'service')['id']
     if request.get('title'):
         args['title'] = request['title']
     if not ('title' in args or 'serviceId' in args):
@@ -106,17 +112,40 @@ def resolve(request, user, people, workspace):
     return args
 
 
-def plan(document):
-    row, tickets = paired_row(document['hi2'], ('identity_ticket', 'workspace_ticket'))
+def read_context(hi2_result):
+    row, tickets = paired_row(hi2_result, ('identity_ticket', 'workspace_ticket'))
+    started = perf_counter_ns()
     identity = fetch(tickets['identity_ticket'])
+    identity_done = perf_counter_ns()
     user = identity.get('user', {})
     if not user.get('id') or user['id'] != row.get('employee_id') or user.get('role') != row.get('staff_role'):
         raise AssignmentError("The authenticated staff identity changed. Stop before creating a task.")
     sections = user.get('allowed_sections')
     if user['role'] != 'Director' and sections is not None and 'tasks' not in sections:
         raise AssignmentError('Tasks access is disabled for this employee.')
+    workspace_started = perf_counter_ns()
     workspace = fetch(tickets['workspace_ticket'])
-    args = resolve(document['request'], user, identity['people'], workspace)
+    timings = {'identity_read': (identity_done - started) // 1_000_000,
+               'workspace_read': (perf_counter_ns() - workspace_started) // 1_000_000}
+    return row, user, identity['people'], workspace, timings
+
+
+def check(document):
+    request = document['request']
+    if set(request) != {'company', 'assignee'}:
+        raise AssignmentError("The eligibility check takes only company and assignee.")
+    _, user, people, workspace, timings = read_context(document['hi2'])
+    company, owner = resolve_recipient(request, user, people, workspace)
+    return {'eligible': True, 'tasks_enabled': True,
+            'caller': {k: user[k] for k in ('id', 'name', 'role', 'team_id')},
+            'company': {'code': company['c'], 'name': company['name']},
+            'assignee': {k: owner[k] for k in ('id', 'name', 'role', 'team_id')},
+            'timings_ms': timings}
+
+
+def plan(document):
+    row, user, people, workspace, _ = read_context(document['hi2'])
+    args = resolve(document['request'], user, people, workspace)
     return {'request_id': str(uuid.uuid4()), 'operation': 'create_task', 'arguments': args,
             'employee_id': user['id'], 'staff_role': user['role'], 'database_login': row['database_login']}
 
@@ -168,9 +197,15 @@ def finish(saved, response):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('step', choices=('plan', 'resume', 'finish'))
-    parser.add_argument('file', type=Path, help='Private plan file, unique to this instruction.')
+    steps = parser.add_subparsers(dest='step', required=True)
+    steps.add_parser('check', help='Read caller, company and recipient eligibility.')
+    for step in ('plan', 'resume', 'finish'):
+        command = steps.add_parser(step)
+        command.add_argument('file', type=Path, help='Private plan file, unique to this instruction.')
     args = parser.parse_args()
+    if args.step == 'check':
+        print(json.dumps(check(json.load(sys.stdin)), ensure_ascii=False))
+        return
     if args.step == 'plan':
         saved = plan(json.load(sys.stdin))
         # Exclusive creation prevents retries or concurrent runs from replacing a write ID.
