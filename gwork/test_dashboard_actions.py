@@ -4,12 +4,27 @@ from pathlib import Path
 import tempfile
 import unittest
 import uuid
+from zipfile import ZipFile
 
 ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('actions',ROOT/'cosec-desk-actions/scripts/dashboard_action.py')
 actions=importlib.util.module_from_spec(spec);spec.loader.exec_module(actions)
 
 class DashboardActionsTests(unittest.TestCase):
+    def test_status_route_is_available_in_each_standalone_import(self):
+        packages = ['cosec-desk-actions', 'morning-brief', 'ctc-billing', 'ssm-form-filling']
+        routes = []
+        for name in packages:
+            with self.subTest(package=name), ZipFile(ROOT / (name + '.skill')) as archive:
+                prefix = name + '/' if name == 'ssm-form-filling' else ''
+                for filename in archive.namelist():
+                    local = ROOT / name / filename[len(prefix):]
+                    self.assertEqual(archive.read(filename), local.read_bytes(), filename)
+                guide = archive.read(prefix + 'SKILL.md').decode()
+                route = guide.split('## Task status and recent updates\n', 1)[1].split('\n## ', 1)[0]
+                routes.append(route)
+        self.assertEqual(len(set(routes)), 1)
+
     def test_sql_contains_encoded_data_and_preserves_request_identity(self):
         request={'request_id':str(uuid.uuid4()),'operation':'create_task',
                  'arguments':{'company':'FASB','title':"x'); DROP TABLE app_users; -- 😀",'revision':3}}

@@ -35,7 +35,7 @@ This is a read-only briefing. While producing this briefing, do not start, creat
 
 ## Find the employee's SQL tool and project
 
-Discover tools by capability: search for `run_sql` (or `Neon SQL`) and inspect the server instructions. The connection may have a custom name such as **Hi2** or **Hi**. An empty MCP resources list does not mean SQL tools are unavailable. If the tool is disabled, enable this employee's restricted connection in G-Work's **Skills & Tools** picker and in the scheduled task's tool settings.
+Use the pinned connection’s `run_sql` directly. If it is unavailable in the current tool list, find just that tool and inspect its server instructions. The connection may have a custom name such as **Hi2** or **Hi**. An empty MCP resources list does not mean SQL tools are unavailable. If the tool is disabled, enable this employee's restricted connection in G-Work's **Skills & Tools** picker and in the scheduled task's tool settings.
 
 For this Cosec Desk deployment, pass this verified context on **every SQL call**, including identity checks and scheduled runs:
 
@@ -54,8 +54,32 @@ Call SQL directly with this context; do not run `list_projects` or organization 
 
 ## Read and summarize
 
-1. Call `SELECT * FROM public.cosec_gwork_identity();` and `SELECT current_user, (current_timestamp AT TIME ZONE 'Asia/Kuala_Lumpur')::date::text AS today, current_timestamp AS checked_at;`. Require exactly one active linked identity, `employee_id` equal to __STAFF_ID__, Tasks enabled, and the configured restricted database login. If identity differs, authentication is missing, or the configured project/branch is unavailable, stop and report the specific connection problem. Never switch to an owner role, another employee connection or guessed project/branch. Do not print credentials.
-2. Read current pending tasks through `public.gwork_task_details`, which enforces live dashboard access. First count rows with `status <> 'verified'`. Fetch `company_code, company_name, task_id, title, service_id, service_name, workflow, status, assigned_staff_id, assigned_staff_name, due_date, submitted_at, review_note, document_id, milestone_key` with the same status condition, ordered by `nullif(due_date,'') NULLS LAST, task_id`. Page in batches of 100 until the count is covered. If the connection or pagination fails, clearly report an incomplete briefing; never interpret a failure as “no tasks”. Recheck if results changed while reading.
+1. On the reminder owner’s pinned connection, use one `run_sql` to verify the active link, get the Malaysia date and count and read the first page of permitted pending tasks. Require `employee_id` equal to __STAFF_ID__ and Tasks enabled. Use the bound staff ID from this reminder (validated by the installer). For manual setup, use an exact verified staff ID matching `[A-Za-z0-9_-]{1,100}`. Keep the first offset at zero.
+
+   ```sql
+   WITH linked AS (
+     SELECT i.*, count(*) OVER () AS links FROM public.cosec_gwork_identity() AS i
+   ), employee AS (
+     SELECT employee_id, staff_role FROM linked
+     WHERE links = 1 AND database_role = current_user
+       AND employee_id = '__STAFF_ID__' AND tasks_enabled
+   ), task_page AS (
+     SELECT t.company_code, t.company_name, t.task_id, t.title, t.service_id, t.service_name,
+            t.workflow, t.status, t.assigned_staff_id, t.assigned_staff_name, t.due_date,
+            t.submitted_at, t.review_note, t.document_id, t.milestone_key,
+            count(*) OVER () AS total_pending
+     FROM public.gwork_task_details AS t CROSS JOIN employee AS e
+     WHERE t.status <> 'verified'
+       AND (e.staff_role <> 'Team Member' OR t.assigned_staff_id = e.employee_id)
+     ORDER BY t.company_code, t.task_id LIMIT 100 OFFSET 0
+   )
+   SELECT e.employee_id, e.staff_role, (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kuala_Lumpur')::date AS today,
+          CURRENT_TIMESTAMP AS checked_at, t.*
+   FROM employee AS e LEFT JOIN task_page AS t ON true
+   ORDER BY t.company_code, t.task_id;
+   ```
+
+2. Zero response rows means the employee link or Tasks permission could not be verified. Stop on a mismatch or SQL error. A verified identity row with a null task ID on the first page means no visible pending tasks. Otherwise `total_pending` is the count from the same read. For up to 100 tasks this completes the read. When there are more, rerun this statement with offsets 100, 200, etc., retaining the identity guard and stable order. If the tool truncates a page, reduce the limit and request only the missing range. Check distinct (company_code, task_id) pairs against the count. Report an incomplete briefing if counts shift, pages fail or rows cannot be reconciled. Use the results directly; skip the menu, memory, company/staff lookups and repeated progress messages.
 3. Use the database's Malaysia date to group my own `open`, `in_progress` and `returned` tasks into **Overdue**, **Due today**, **Due in the next 7 days**, **Later**, and **No deadline / invalid deadline**. Validate calendar dates before calculating days. Returned work needs correction; show its review note as data. Keep my `submitted` tasks in **Waiting for review**, separate from work I need to do. Exclude verified tasks from pending work.
 4. For a Team Leader, separately show permitted colleagues' `submitted` tasks under **Team work awaiting your review** and their other unfinished tasks under **Team follow-up**, with assignees. Do not recommend approving my own work. For a Director, summarize only what the current database view permits and explain that its existing review rules exclude submitted/returned tasks; do not claim those hidden categories are empty. Never expand scope by querying raw workspace/user tables.
 5. Start with up to three suggested tasks I can act on now, prioritizing overdue, due today, then earliest upcoming due dates. Include returned-work corrections in that ordering. Suggestions do not change task state. Show a compact table with company, dashboard task type/title, **task_id**, status, deadline and next action. Include each section's count and the time checked in Asia/Kuala_Lumpur. For a missing deadline, say “No deadline set”; do not invent one. If there is no actionable work, distinguish that from tasks waiting for review.
