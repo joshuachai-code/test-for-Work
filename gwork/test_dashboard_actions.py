@@ -23,7 +23,13 @@ class DashboardActionsTests(unittest.TestCase):
                 guide = archive.read(prefix + 'SKILL.md').decode()
                 route = guide.split('## Task status and recent updates\n', 1)[1].split('\n## ', 1)[0]
                 routes.append(route)
-        self.assertEqual(len(set(routes)), 1)
+        # Specialist packages still share their existing standalone lookup.
+        self.assertEqual(len(set(routes[1:])), 1)
+        reporting = [route.split('Filter by any requested task ID', 1)[1] for route in routes]
+        self.assertEqual(len(set(reporting)), 1)
+        self.assertIn('database_role = current_user AND tasks_enabled', routes[0])
+        self.assertNotIn('gwork_daniel', routes[0])
+        self.assertNotIn('gwork_member_a', routes[0])
 
     def test_sql_contains_encoded_data_and_preserves_request_identity(self):
         request={'request_id':str(uuid.uuid4()),'operation':'create_task',
