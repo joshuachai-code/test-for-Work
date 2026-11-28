@@ -1,6 +1,6 @@
 ---
 name: cosec-desk-actions
-description: Check current task status and recent updates for a company, or perform Cosec Desk dashboard actions from G-Work with the linked employee's permissions. Covers task assignment, starting, submission, verification, returns, company/document/register/board updates, handovers, task billing, staff settings, company access and work history, including actions after a morning briefing.
+description: Check assignment eligibility, current task status and recent updates for a company, or perform Cosec Desk dashboard actions from G-Work with the linked employee's permissions. Covers task assignment, starting, submission, verification, returns, company/document/register/board updates, handovers, task billing, staff settings, company access and work history, including actions after a morning briefing.
 ---
 
 # Cosec Desk actions
@@ -15,14 +15,14 @@ Use the provisioned project, branch, database and compute values below on Hi2 ca
 {"project_id":"lingering-base-89796182","branch_id":"br-super-thunder-az57jivk","database_name":"neondb","compute_id":"ep-fragrant-dust-az3a8wul"}
 ```
 
-## Assign a new task
+## Check assignment eligibility
 
-For a new standalone task use the four steps below. Existing-task transfers, linked milestones and document preparation use their own dashboard procedures. Keep the request in private local input. Use one plan file per user instruction and accept ticket results only from the corresponding Hi2 tool call.
+Use this route for “who am I, can I assign a task for this company, and is this person eligible?” and for requests to stop before creating a task. Use the same preflight SQL for a real assignment.
 
-1. **Identify the caller and their permissions.** Start with the query below using the current Hi2 connection. It returns the database login, employee ID, role and Tasks access for the one linked caller. Disabled Tasks access or zero rows stops the workflow. Only an allowed caller receives the two read tickets. Use `'{}'::jsonb` for the workspace if the company code is unknown. For a known code, restrict the workspace read to that company, for example `jsonb_build_object('company','FASB')`.
-2. **Identify the request and its recipient.** Run `python3 scripts/hi2_assignment.py plan PRIVATE_PLAN_PATH` with one JSON object on stdin: `{"hi2": <unchanged result from step 1>, "request": <business fields>}`. Set `company` and `assignee` to the requested names or IDs. Include the supplied `service` or `title`, `quantity` and `due_date` as applicable. A company code or exact legal name works. A date uses YYYY-MM-DD. Example business fields: `{"company":"Fast AI Sdn Bhd","assignee":"Aisha","service":"CTC","quantity":5,"due_date":"2026-11-30"}`. Only use details from the current request.
-3. **Check whether the recipient is eligible.** The plan command fetches the authenticated account and the permitted workspace, then requires one active staff match in the company's team. A Team Member can create work only for themselves. An ambiguous, missing or ineligible recipient stops the command before it issues write arguments. If the plan succeeds, send the exact generated SQL arguments to the same Hi2 connection. They check that the caller still matches step 1 and bind the create ticket to the checked assignment. Follow the transport rule above.
-4. **Add the task and confirm the saved row.** Run `python3 scripts/hi2_assignment.py finish PRIVATE_PLAN_PATH` with step 3's result on stdin. It executes the create ticket using the dashboard's existing permission checks and then reads the task by its new ID. Report the returned fields and verification status. If the write outcome is uncertain, use `resume PRIVATE_PLAN_PATH` and repeat steps 3–4 with the same immutable request ID and arguments. An explicit revision conflict requires reviewing the changed records before a fresh plan. If creation committed and readback failed, retry only the permitted read.
+1. Call the authenticated Hi2 `run_sql` once with the routing arguments above and the SQL below. The two tickets are for independent reads. Use the known company code for the workspace argument (the example uses FASB). If only an unresolved company name is available, use `'{}'::jsonb` for that argument and let the helper match within the permitted workspace. If the tool needs discovery, find only Hi2. Stop on a missing linked caller or disabled Tasks access.
+2. From the installed skill directory, run `python3 scripts/hi2_assignment.py check` directly. Pipe one JSON object on stdin with `hi2` set to the unchanged result from step 1 and `request` set to the requested company and assignee, e.g. `{"company":"FASB","assignee":"Aisha"}`. Use tickets only from that exact tool result. This command needs no file, task title, quantity or deadline. Return the caller, company and eligibility from the result. If the helper reports an ambiguous name, ask for the exact staff name or ID. Report access, identity and connection failures as such.
+
+On the normal path, skip the separate reference and script reads, Python availability probe, menu discovery and plan creation. If execution fails, troubleshoot the actual error. On a timed test, include the two dashboard read times from `timings_ms` in the final line. G-Work's total elapsed time also includes ticket issuance and agent processing.
 
 ```sql
 WITH linked AS (
@@ -32,10 +32,19 @@ SELECT database_role AS database_login, employee_id, staff_role, tasks_enabled,
        CASE WHEN tasks_enabled THEN public.cosec_gwork_request(
          gen_random_uuid(), 'get_identity', '{}'::jsonb) END AS identity_ticket,
        CASE WHEN tasks_enabled THEN public.cosec_gwork_request(
-         gen_random_uuid(), 'get_workspace', '{}'::jsonb) END AS workspace_ticket
+         gen_random_uuid(), 'get_workspace', jsonb_build_object('company','FASB')) END AS workspace_ticket
 FROM linked
 WHERE links = 1 AND database_role = current_user;
 ```
+
+## Assign a new task
+
+For a new standalone task use the four steps below. Existing-task transfers, linked milestones and document preparation use their own dashboard procedures. Keep the request in private local input. Use one plan file per user instruction and accept ticket results only from the corresponding Hi2 tool call.
+
+1. **Identify the caller and their permissions.** Run the preflight SQL in **Check assignment eligibility** once on the current Hi2 connection. For a write, continue directly with the plan command in step 2. Run a separate eligibility command only when the user asks for a read-only check.
+2. **Identify the request and its recipient.** Run `python3 scripts/hi2_assignment.py plan PRIVATE_PLAN_PATH` with one JSON object on stdin: `{"hi2": <unchanged result from step 1>, "request": <business fields>}`. Set `company` and `assignee` to the requested names or IDs. Include the supplied `service` or `title`, `quantity` and `due_date` as applicable. A company code or exact legal name works. A date uses YYYY-MM-DD. Example business fields: `{"company":"Fast AI Sdn Bhd","assignee":"Aisha","service":"CTC","quantity":5,"due_date":"2026-11-30"}`. Only use details from the current request.
+3. **Check whether the recipient is eligible.** The plan command fetches the authenticated account and the permitted workspace, then requires one active staff match in the company's team. A Team Member can create work only for themselves. An ambiguous, missing or ineligible recipient stops the command before it issues write arguments. If the plan succeeds, send the exact generated SQL arguments to the same Hi2 connection. They check that the caller still matches step 1 and bind the create ticket to the checked assignment. Follow the transport rule above.
+4. **Add the task and confirm the saved row.** Run `python3 scripts/hi2_assignment.py finish PRIVATE_PLAN_PATH` with step 3's result on stdin. It executes the create ticket using the dashboard's existing permission checks and then reads the task by its new ID. Report the returned fields and verification status. If the write outcome is uncertain, use `resume PRIVATE_PLAN_PATH` and repeat steps 3–4 with the same immutable request ID and arguments. An explicit revision conflict requires reviewing the changed records before a fresh plan. If creation committed and readback failed, retry only the permitted read.
 
 ## Task status and recent updates
 
